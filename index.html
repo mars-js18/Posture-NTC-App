@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PosturaPro | Training</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Tema verde estilo NTC */
+        :root {
+            --ntc-green: #caff00;
+            --ntc-green-dim: rgba(202, 255, 0, 0.2);
+        }
+
+        .text-ntc { color: var(--ntc-green); }
+        .bg-ntc { background-color: var(--ntc-green); }
+        .border-ntc { border-color: var(--ntc-green); }
+
+        /* Animación de Respiración Diafragmática */
+        @keyframes breathe {
+            0% { transform: scale(0.8); opacity: 0.3; box-shadow: 0 0 0 0 var(--ntc-green-dim); }
+            50% { transform: scale(1.2); opacity: 0.8; box-shadow: 0 0 40px 10px var(--ntc-green-dim); }
+            100% { transform: scale(0.8); opacity: 0.3; box-shadow: 0 0 0 0 var(--ntc-green-dim); }
+        }
+        .animate-breathe {
+            animation: breathe 6s ease-in-out infinite;
+        }
+
+        /* Transiciones suaves */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom Scrollbar oculta para app feel */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONOS SVG (Sin dependencias externas) ---
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
+        const IconPlay = () => <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>;
+        const IconPause = () => <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>;
+        const IconHome = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
+        const IconSettings = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
+        const IconActivity = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>;
+        const IconAlert = () => <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
+        const IconInfo = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
+
+        // --- SISTEMA DE AUDIO Y VIBRACIÓN (Tonos graves) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const triggerFeedback = (type) => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine'; // Tono suave y grave
+
+            if (type === 'min') {
+                // Tono único grave indicando mínimo alcanzado
+                osc.frequency.setValueAtTime(250, now);
+                gain.gain.setValueAtTime(0.8, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+                if (navigator.vibrate) navigator.vibrate([300]);
+                
+            } else if (type === 'max') {
+                // Doble tono grave indicando máximo/fin
+                osc.frequency.setValueAtTime(200, now);
+                gain.gain.setValueAtTime(0.8, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(200, now + 0.4);
+                gain2.gain.setValueAtTime(0.8, now + 0.4);
+                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+                osc2.start(now + 0.4);
+                osc2.stop(now + 0.7);
+                
+                if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
+                
+            } else if (type === 'rest-end') {
+                // 3 tonos descendentes
+                osc.frequency.setValueAtTime(350, now);
+                osc.frequency.linearRampToValueAtTime(200, now + 0.8);
+                gain.gain.setValueAtTime(0.8, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+                osc.start(now);
+                osc.stop(now + 0.8);
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+            }
+        };
+
+        // --- BASE DE DATOS DE EJERCICIOS ---
+        const EXERCISES = {
+            ext_toracica: {
+                id: 'ext_toracica', phase: 'FASE I: INHIBICIÓN', name: 'Extensión Torácica',
+                pos: 'Recostado boca arriba. Deslízate hasta que la cabeza y la mitad superior de la escápula cuelguen fuera del borde de la cama.',
+                tech: 'Deja caer la cabeza por debajo del nivel de los hombros por gravedad.',
+                err: 'Rodillas deben estar flexionadas. No tenses al levantarte, usa las manos para ayudarte.',
+                imgText: 'Borde de cama'
+            },
+            elon_pectoral: {
+                id: 'elon_pectoral', phase: 'FASE I: INHIBICIÓN', name: 'Elongación Pectoral',
+                pos: 'De pie frente al marco de una puerta. Apoya ambos antebrazos verticalmente.',
+                tech: 'Codos a 90 grados a la altura del hombro. Da un paso lento hacia adelante proyectando el esternón.',
+                err: 'Evita arquear la espalda baja. Contrae el abdomen ligeramente.',
+                imgText: 'Marco de puerta'
+            },
+            elon_cervical: {
+                id: 'elon_cervical', phase: 'FASE I: INHIBICIÓN', name: 'Elongación Cervical',
+                pos: 'Sentado o de pie. Ancla una mano bajo la silla o en la espalda baja para fijar el hombro.',
+                tech: 'Con la mano contraria, tira suavemente de la oreja hacia el hombro opuesto.',
+                err: 'No apliques tirones bruscos. Respira profundo en la tensión.',
+                imgText: 'Estiramiento cuello'
+            },
+            chin_tucks: {
+                id: 'chin_tucks', phase: 'FASE II: ACTIVACIÓN', name: 'Retracciones (Chin Tucks)',
+                pos: 'De pie con la espalda adosada a la pared.',
+                tech: 'Mirada al frente, empuja la cabeza en línea recta hacia atrás contra la pared creando un "doble mentón".',
+                err: 'No inclines la cabeza hacia arriba ni hacia abajo. Es una traslación horizontal.',
+                imgText: 'Doble mentón'
+            },
+            wall_slides: {
+                id: 'wall_slides', phase: 'FASE II: ACTIVACIÓN', name: 'Deslizamientos (Wall Slides)',
+                pos: 'Espalda, cabeza y glúteos contra la pared. Brazos en "manos arriba" a 90 grados.',
+                tech: 'Desliza los brazos hacia arriba y abajo lentamente pegados a la pared.',
+                err: 'No pierdas el contacto del dorso de las manos y espalda con la pared.',
+                imgText: 'Manos a la pared'
+            },
+            ywtl: {
+                id: 'ywtl', phase: 'FASE II: ACTIVACIÓN', name: 'Isometría Y-W-T-L',
+                pos: 'De pie, faja abdominal comprimida, mentón retraído.',
+                tech: 'Forma Y, W, T y L con los brazos. Exprime las escápulas hacia atrás en cada postura.',
+                err: 'No dejes que los hombros vuelvan adelante. Mantén el "efecto trinquete".',
+                imgText: 'Posturas Y-W-T-L'
+            },
+            rotadores: {
+                id: 'rotadores', phase: 'FASE II: ACTIVACIÓN', name: 'Rotadores Externos',
+                pos: 'De lado junto a una pared. Codo flexionado a 90 grados, pegado a las costillas.',
+                tech: 'Empuja el dorso de la muñeca hacia afuera contra la pared vigorosamente (sin moverte).',
+                err: 'No despegues el codo de las costillas. Puedes usar una toalla pequeña en el codo.',
+                imgText: 'Empuje isométrico'
+            },
+            plancha: {
+                id: 'plancha', phase: 'FASE III: INTEGRACIÓN', name: 'Plancha Frontal',
+                pos: 'Suelo, apoyo en antebrazos y puntas de los pies.',
+                tech: 'Mantén el cuerpo como una tabla recta. Faja abdominal activada al 100%.',
+                err: 'No dejes colgar la cabeza ni arquear la zona lumbar (no hundir la pelvis).',
+                imgText: 'Plancha en suelo'
+            },
+            puente: {
+                id: 'puente', phase: 'FASE III: INTEGRACIÓN', name: 'Puente de Glúteos',
+                pos: 'Suelo, boca arriba, rodillas flexionadas.',
+                tech: 'Eleva la pelvis apretando los glúteos en la parte más alta.',
+                err: 'Empuja con los glúteos, NO con la espalda baja.',
+                imgText: 'Puente invertido'
+            }
+        };
+
+        // Generador de rutinas según la semana (Periodización)
+        const generateWorkout = (week) => {
+            let month = week <= 4 ? 1 : (week <= 8 ? 2 : 3);
+            let timeMultiplier = month === 1 ? 1 : (month === 2 ? 1.5 : 2);
+            let playlist = [];
+
+            const addExercise = (exKey, baseMin, baseMax, series) => {
+                const ex = EXERCISES[exKey];
+                for(let i=0; i<series; i++) {
+                    playlist.push({
+                        type: 'exercise',
+                        ...ex,
+                        minTime: Math.floor(baseMin * timeMultiplier),
+                        maxTime: Math.floor(baseMax * timeMultiplier),
+                        currentSerie: i + 1,
+                        totalSeries: series
+                    });
+                    if (i < series - 1 || exKey !== 'puente') {
+                        playlist.push({ type: 'rest', time: 15, nextEx: ex });
+                    }
+                }
+            };
+
+            // Secuencialidad Estricta: FASE I -> FASE II -> FASE III
+            addExercise('ext_toracica', 15, 25, 2);
+            addExercise('elon_pectoral', 20, 35, 2);
+            addExercise('elon_cervical', 20, 30, 2);
+            
+            addExercise('chin_tucks', 30, 45, 2);
+            addExercise('wall_slides', 25, 40, 2);
+            addExercise('ywtl', 30, 50, 2);
+            addExercise('rotadores', 20, 35, 2);
+
+            addExercise('plancha', 20, 30, 2);
+            addExercise('puente', 25, 40, 2);
+
+            // Preparar mensajes de next para los descansos
+            for (let i = 0; i < playlist.length; i++) {
+                if (playlist[i].type === 'rest' && playlist[i+1]) {
+                    playlist[i].nextExInfo = playlist[i+1];
+                }
+            }
+            return playlist;
+        };
+
+        // --- COMPONENTES ---
+
+        const RedFlags = ({ onAccept }) => (
+            <div className="min-h-screen p-6 flex flex-col justify-center items-center text-center fade-in max-w-md mx-auto">
+                <IconAlert />
+                <h1 className="text-2xl font-black mt-6 mb-2 text-white uppercase tracking-tight">Protocolo de Seguridad</h1>
+                <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                    Esta aplicación está diseñada para higiene postural. Debes detenerte y consultar a un médico inmediatamente si presentas:
+                </p>
+                <ul className="text-left text-sm text-gray-300 space-y-3 mb-8 w-full bg-neutral-900 p-5 rounded-xl border border-neutral-800">
+                    <li className="flex items-start"><span className="text-red-500 mr-2">■</span> Dolor cervical que no cede con descanso.</li>
+                    <li className="flex items-start"><span className="text-red-500 mr-2">■</span> Dolor eléctrico que baja por el brazo.</li>
+                    <li className="flex items-start"><span className="text-red-500 mr-2">■</span> Entumecimiento u hormigueo en extremidades.</li>
+                    <li className="flex items-start"><span className="text-red-500 mr-2">■</span> Pérdida de control de esfínteres.</li>
+                </ul>
+                <button onClick={onAccept} className="w-full bg-ntc text-black font-bold py-4 rounded-full text-lg shadow-[0_0_20px_rgba(202,255,0,0.3)] active:scale-95 transition-transform">
+                    Acepto los términos médicos
+                </button>
+            </div>
+        );
+
+        const Engine = ({ workoutPlan, onComplete, onExit }) => {
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [timeElapsed, setTimeElapsed] = useState(0);
+            const [restTimeLeft, setRestTimeLeft] = useState(0);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [hasReachedMin, setHasReachedMin] = useState(false);
+            
+            const currentStep = workoutPlan[currentIndex];
+
+            // Iniciar Audio Context al primer toque (política navegadores)
+            useEffect(() => {
+                const initAudio = () => { if (audioCtx.state === 'suspended') audioCtx.resume(); };
+                window.addEventListener('touchstart', initAudio, { once: true });
+                window.addEventListener('click', initAudio, { once: true });
+            }, []);
+
+            useEffect(() => {
+                if (!currentStep) return;
+                
+                setTimeElapsed(0);
+                setHasReachedMin(false);
+                if (currentStep.type === 'rest') {
+                    setRestTimeLeft(currentStep.time);
+                }
+                // Auto-play al cambiar de paso
+                setIsPlaying(true);
+            }, [currentIndex]);
+
+            useEffect(() => {
+                let interval = null;
+                if (isPlaying) {
+                    interval = setInterval(() => {
+                        if (currentStep.type === 'exercise') {
+                            setTimeElapsed(prev => {
+                                const newTime = prev + 1;
+                                // Lógica de alertas
+                                if (newTime === currentStep.minTime && !hasReachedMin) {
+                                    triggerFeedback('min');
+                                    setHasReachedMin(true);
+                                }
+                                if (newTime === currentStep.maxTime) {
+                                    triggerFeedback('max');
+                                    handleNext();
+                                }
+                                return newTime;
+                            });
+                        } else {
+                            setRestTimeLeft(prev => {
+                                if (prev <= 1) {
+                                    triggerFeedback('rest-end');
+                                    handleNext();
+                                    return 0;
+                                }
+                                return prev - 1;
+                            });
+                        }
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [isPlaying, currentStep, hasReachedMin]);
+
+            const handleNext = () => {
+                if (currentIndex < workoutPlan.length - 1) {
+                    setCurrentIndex(prev => prev + 1);
+                } else {
+                    onComplete();
+                }
+            };
+
+            if (!currentStep) return null;
+
+            return (
+                <div className="min-h-screen flex flex-col bg-neutral-950 fade-in">
+                    {/* Header */}
+                    <div className="px-6 py-6 flex justify-between items-center border-b border-neutral-900">
+                        <button onClick={onExit} className="text-gray-500 text-sm font-semibold tracking-wider">SALIR</button>
+                        <span className="text-xs font-bold text-ntc tracking-widest bg-ntc/10 px-3 py-1 rounded-full">
+                            {currentStep.type === 'exercise' ? currentStep.phase : 'DESCANSO'}
+                        </span>
+                        <div className="w-10"></div>
+                    </div>
+
+                    {currentStep.type === 'exercise' ? (
+                        <div className="flex-1 flex flex-col items-center justify-between py-10 px-6 text-center">
+                            <div>
+                                <h2 className="text-3xl font-black uppercase tracking-tight">{currentStep.name}</h2>
+                                <p className="text-gray-400 mt-2 text-sm font-medium">Serie {currentStep.currentSerie} de {currentStep.totalSeries}</p>
+                            </div>
+                            
+                            {/* Animación Central de Respiración y Tiempo */}
+                            <div className="relative w-64 h-64 flex items-center justify-center">
+                                <div className={`absolute inset-0 rounded-full border-2 border-ntc/30 ${isPlaying ? 'animate-breathe' : ''}`}></div>
+                                <div className="z-10 flex flex-col items-center">
+                                    <span className="text-7xl font-black text-white">{timeElapsed}</span>
+                                    <span className="text-sm text-ntc font-bold uppercase tracking-widest mt-1">Segundos</span>
+                                </div>
+                            </div>
+
+                            <div className="w-full text-left bg-neutral-900/50 p-4 rounded-2xl border border-neutral-800">
+                                <p className="text-sm text-gray-300"><span className="text-white font-bold">Respiración:</span> Inspira diafragmáticamente, espira forzadamente.</p>
+                                <p className="text-sm text-gray-300 mt-2"><span className="text-ntc font-bold">Meta:</span> {currentStep.minTime} a {currentStep.maxTime} seg</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center py-10 px-6 text-center">
+                            <h2 className="text-5xl font-black text-ntc">{restTimeLeft}</h2>
+                            <p className="text-gray-400 font-bold tracking-widest uppercase mt-2 text-sm">Recuperación</p>
+                            
+                            <div className="mt-12 w-full text-left bg-neutral-900 p-6 rounded-3xl border border-neutral-800 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-ntc"></div>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Siguiente Ejercicio</p>
+                                <h3 className="text-xl font-bold text-white mb-4">{currentStep.nextExInfo.name}</h3>
+                                <div className="space-y-3">
+                                    <p className="text-sm text-gray-300 flex items-start"><IconInfo className="w-5 h-5 text-ntc mr-2 shrink-0" /> {currentStep.nextExInfo.tech}</p>
+                                    <p className="text-sm text-red-400 flex items-start"><IconAlert className="w-5 h-5 text-red-500 mr-2 shrink-0" /> {currentStep.nextExInfo.err}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Controles Base */}
+                    <div className="pb-10 pt-4 px-8 flex items-center justify-center gap-8">
+                        <button 
+                            onClick={() => setIsPlaying(!isPlaying)} 
+                            className="w-20 h-20 bg-white text-black rounded-full flex items-center justify-center active:scale-90 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                        >
+                            {isPlaying ? <IconPause /> : <IconPlay />}
+                        </button>
+                        
+                        {/* Botón Next visible solo si es descanso o si ya alcanzó el tiempo mínimo (Secuencialidad estricta) */}
+                        {(currentStep.type === 'rest' || hasReachedMin) && (
+                            <button onClick={handleNext} className="absolute right-8 text-ntc font-bold uppercase tracking-wider text-sm active:scale-95 transition-transform">
+                                Siguiente
+                            </button>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            // Estado principal
+            const [state, setState] = useState(() => {
+                // Estado por defecto en memoria
+                return {
+                    termsAccepted: false,
+                    week: 1,
+                    workoutsCompleted: 0,
+                    lastWorkoutDate: null
+                };
+            });
+
+            const [view, setView] = useState('home'); // home, workout, settings
+            const [workoutPlan, setWorkoutPlan] = useState(null);
+            
+            // Backup State
+            const [backupCode, setBackupCode] = useState("");
+            const [importCode, setImportCode] = useState("");
+
+            const handleAcceptTerms = () => setState(s => ({ ...s, termsAccepted: true }));
+
+            const startWorkout = () => {
+                setWorkoutPlan(generateWorkout(state.week));
+                setView('workout');
+            };
+
+            const finishWorkout = () => {
+                triggerFeedback('rest-end'); // Fanfarria final
+                setState(s => {
+                    const newTotal = s.workoutsCompleted + 1;
+                    // Avanzar de semana cada 3 entrenamientos (ejemplo simple de progresión)
+                    const newWeek = Math.floor(newTotal / 3) + 1; 
+                    return {
+                        ...s,
+                        workoutsCompleted: newTotal,
+                        week: newWeek > 12 ? 12 : newWeek,
+                        lastWorkoutDate: new Date().toISOString()
+                    };
+                });
+                setView('home');
+                alert("¡Entrenamiento Completado! Excelente trabajo manteniendo la postura.");
+            };
+
+            const generateBackup = () => {
+                const encoded = btoa(JSON.stringify(state));
+                setBackupCode(encoded);
+            };
+
+            const restoreBackup = () => {
+                try {
+                    const decoded = JSON.parse(atob(importCode.trim()));
+                    if (decoded && typeof decoded.week === 'number') {
+                        setState(decoded);
+                        setImportCode("");
+                        alert("Progreso restaurado con éxito.");
+                    } else { throw new Error("Invalid format"); }
+                } catch (e) {
+                    alert("Código de respaldo inválido. Verifica e intenta de nuevo.");
+                }
+            };
+
+            const resetProgress = () => {
+                if(confirm("¿Estás seguro de reiniciar todo el progreso a la Semana 1?")) {
+                    setState({ termsAccepted: true, week: 1, workoutsCompleted: 0, lastWorkoutDate: null });
+                }
+            };
+
+            if (!state.termsAccepted) return <RedFlags onAccept={handleAcceptTerms} />;
+            
+            if (view === 'workout') return <Engine workoutPlan={workoutPlan} onComplete={finishWorkout} onExit={() => setView('home')} />;
+
+            if (view === 'settings') {
+                return (
+                    <div className="min-h-screen bg-neutral-950 p-6 fade-in flex flex-col">
+                        <div className="flex justify-between items-center mb-8 pt-4">
+                            <h2 className="text-2xl font-black uppercase tracking-tight">Sistema & Respaldo</h2>
+                            <button onClick={() => setView('home')} className="text-gray-400 font-bold text-sm">CERRAR</button>
+                        </div>
+                        
+                        <div className="space-y-8 flex-1">
+                            <div className="bg-neutral-900 p-5 rounded-2xl border border-neutral-800">
+                                <h3 className="font-bold text-ntc mb-2 flex items-center"><IconActivity className="mr-2 w-5 h-5"/> Exportar Progreso</h3>
+                                <p className="text-xs text-gray-400 mb-4">Guarda este código en tus notas por si se borra la app de tu celular.</p>
+                                <button onClick={generateBackup} className="w-full bg-neutral-800 text-white py-3 rounded-xl font-bold text-sm mb-3">Generar Código de Respaldo</button>
+                                {backupCode && (
+                                    <textarea readOnly value={backupCode} className="w-full bg-black text-ntc p-3 rounded-lg text-xs font-mono h-24 border border-neutral-700 outline-none" onClick={e => {e.target.select(); document.execCommand('copy'); alert('Copiado al portapapeles');}}></textarea>
+                                )}
+                            </div>
+
+                            <div className="bg-neutral-900 p-5 rounded-2xl border border-neutral-800">
+                                <h3 className="font-bold text-white mb-2">Restaurar Progreso</h3>
+                                <textarea value={importCode} onChange={e => setImportCode(e.target.value)} placeholder="Pega tu código aquí..." className="w-full bg-black text-gray-300 p-3 rounded-lg text-xs font-mono h-20 mb-3 border border-neutral-700 outline-none"></textarea>
+                                <button onClick={restoreBackup} className="w-full bg-white text-black py-3 rounded-xl font-bold text-sm">Restaurar Datos</button>
+                            </div>
+
+                            <div className="pt-6 border-t border-neutral-800">
+                                <button onClick={resetProgress} className="w-full text-red-500 font-bold py-3 text-sm">Reiniciar Todo el Progreso</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // HOME VIEW
+            const currentMonth = state.week <= 4 ? 1 : (state.week <= 8 ? 2 : 3);
+            const monthLabels = ["Primordial (Estabilización)", "Transicional (Resistencia)", "Desarrollo (Integración)"];
+
+            return (
+                <div className="min-h-screen bg-[#0a0a0a] flex flex-col fade-in">
+                    {/* Header */}
+                    <div className="pt-12 px-6 pb-6 flex justify-between items-start">
+                        <div>
+                            <p className="text-ntc font-bold tracking-widest text-xs uppercase mb-1">Tu Programa</p>
+                            <h1 className="text-3xl font-black uppercase tracking-tight">Postura<br/>Perfecta</h1>
+                        </div>
+                        <button onClick={() => setView('settings')} className="bg-neutral-900 p-3 rounded-full text-white active:scale-90 transition-transform">
+                            <IconSettings />
+                        </button>
+                    </div>
+
+                    {/* Stats Dashboard */}
+                    <div className="px-6 mb-8 flex gap-4">
+                        <div className="flex-1 bg-neutral-900 p-4 rounded-3xl border border-neutral-800">
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Semana</p>
+                            <p className="text-3xl font-black">{state.week}<span className="text-sm text-gray-500">/12</span></p>
+                        </div>
+                        <div className="flex-1 bg-neutral-900 p-4 rounded-3xl border border-neutral-800">
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Sesiones</p>
+                            <p className="text-3xl font-black">{state.workoutsCompleted}</p>
+                        </div>
+                    </div>
+
+                    {/* Next Workout Card */}
+                    <div className="px-6 mb-8">
+                        <div className="relative overflow-hidden rounded-[2rem] bg-neutral-900 border border-neutral-800 p-6 pb-8">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-ntc/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                            
+                            <p className="text-ntc text-xs font-bold uppercase tracking-widest mb-4">Fase Actual: Mes {currentMonth}</p>
+                            <h2 className="text-2xl font-black leading-tight w-4/5 mb-2">{monthLabels[currentMonth-1]}</h2>
+                            <p className="text-gray-400 text-sm mb-8 w-4/5">El volumen y tiempo bajo tensión están ajustados para tu nivel actual.</p>
+                            
+                            <button onClick={startWorkout} className="w-full bg-ntc text-black font-black uppercase tracking-widest py-4 rounded-full text-lg shadow-[0_10px_30px_rgba(202,255,0,0.2)] active:scale-95 transition-transform flex justify-center items-center">
+                                Iniciar Sesión <IconPlay />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Habits / PPT */}
+                    <div className="px-6 mb-12">
+                        <h3 className="text-lg font-black uppercase tracking-tight mb-4">Hábitos Diarios (PPT)</h3>
+                        <div className="space-y-3">
+                            <div className="bg-neutral-900/50 p-4 rounded-2xl flex items-center justify-between border border-neutral-800/50">
+                                <div>
+                                    <p className="font-bold text-sm">Ergonomía Digital</p>
+                                    <p className="text-xs text-gray-500 mt-1">Celular a la altura de los ojos.</p>
+                                </div>
+                                <div className="w-6 h-6 rounded-full border-2 border-ntc flex items-center justify-center"></div>
+                            </div>
+                            <div className="bg-neutral-900/50 p-4 rounded-2xl flex items-center justify-between border border-neutral-800/50">
+                                <div>
+                                    <p className="font-bold text-sm">Micro-Descansos</p>
+                                    <p className="text-xs text-gray-500 mt-1">Cada 30 min hacer Chin Tucks.</p>
+                                </div>
+                                <div className="w-6 h-6 rounded-full border-2 border-ntc flex items-center justify-center"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
