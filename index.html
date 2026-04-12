@@ -1,403 +1,407 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, RotateCcw, SkipForward, SkipBack, Info, AlertTriangle, Lightbulb, CheckCircle2 } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postura Real</title>
+    <!-- Tailwind CSS por CDN para los estilos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
 
-// --- DATOS DE LA RUTINA ---
-const WORKOUT_PHASES = [
-  {
-    id: 'prep-1', type: 'prep', title: 'Prepárate: Chin Tucks', duration: 10,
-    instructions: 'Siéntate o ponte de pie derecho. Mira al frente relajadamente.',
-    tips: 'Relaja los hombros antes de empezar.',
-    mistakes: 'Evita tensar el cuello.'
-  },
-  {
-    id: 'work-1-1', type: 'work', title: 'Chin Tucks (Set 1)', duration: 40,
-    instructions: 'Lleva la barbilla hacia atrás sin bajar ni subir la cabeza (como sacando papada). Sostén 2 segundos y relaja.',
-    tips: 'Siente el estiramiento en la base del cráneo.',
-    mistakes: 'No mires hacia abajo. El movimiento es horizontal hacia atrás.'
-  },
-  {
-    id: 'rest-1', type: 'rest', title: 'Descanso corto', duration: 15, next: 'Chin Tucks (Set 2)'
-  },
-  {
-    id: 'work-1-2', type: 'work', title: 'Chin Tucks (Set 2)', duration: 40,
-    instructions: 'Lleva la barbilla hacia atrás (sacando papada). Sostén 2 segundos y relaja. Repite lento.',
-    tips: 'Mantén la mirada fija en un punto al frente.',
-    mistakes: 'No empujes con fuerza excesiva.'
-  },
-  {
-    id: 'prep-2L', type: 'prep', title: 'Ve al Tubo: Brazo Izquierdo', duration: 15,
-    instructions: 'Párate junto al tubo. Apoya tu antebrazo izquierdo en el tubo, con el codo a la altura de tu hombro (90 grados).',
-    tips: 'Prepárate para girar tu cuerpo suavemente a la derecha.',
-    mistakes: 'No subas el codo por encima de tu hombro.'
-  },
-  {
-    id: 'work-2L', type: 'work', title: 'Estiramiento Pectoral (Izq)', duration: 30,
-    instructions: 'Gira tu torso suavemente hacia la derecha, alejándote del brazo apoyado. Mantén la posición.',
-    tips: 'Respira profundo e infla el pecho. Siente cómo se abre.',
-    mistakes: 'No des tirones. Es un estiramiento estático y suave.'
-  },
-  {
-    id: 'prep-2R', type: 'prep', title: 'Cambio: Brazo Derecho', duration: 10,
-    instructions: 'Date la vuelta. Apoya el antebrazo derecho en el tubo, codo a la altura del hombro.',
-    tips: 'Acomódate rápido.',
-    mistakes: ''
-  },
-  {
-    id: 'work-2R', type: 'work', title: 'Estiramiento Pectoral (Der)', duration: 30,
-    instructions: 'Gira el torso hacia la izquierda, alejándote del brazo derecho. Mantén la posición.',
-    tips: 'Saca el pecho ligeramente hacia adelante.',
-    mistakes: 'Si duele el hombro (articulación), baja un poco el codo.'
-  },
-  {
-    id: 'prep-3', type: 'prep', title: 'Busca una Pared', duration: 15,
-    instructions: 'Apoya talones, glúteos, espalda alta y cabeza contra una pared plana.',
-    tips: 'Flexiona ligeramente las rodillas si es más cómodo.',
-    mistakes: 'Evita despegar la cabeza.'
-  },
-  {
-    id: 'work-3-1', type: 'work', title: 'Wall Angels (Set 1)', duration: 45,
-    instructions: 'Codos a 90°. Pega el dorso de las manos a la pared. Desliza brazos hacia arriba y abajo lentamente.',
-    tips: 'Aprieta el abdomen para que tu espalda baja no se despegue demasiado.',
-    mistakes: 'Despegar las manos o codos de la pared. Si pasa, sube menos los brazos.'
-  },
-  {
-    id: 'rest-2', type: 'rest', title: 'Descanso. Relaja brazos.', duration: 15, next: 'Wall Angels (Set 2)'
-  },
-  {
-    id: 'work-3-2', type: 'work', title: 'Wall Angels (Set 2)', duration: 45,
-    instructions: 'Sube y baja los brazos deslizando el dorso de las manos por la pared.',
-    tips: 'Concéntrate en la tensión en tu espalda alta (entre los omóplatos).',
-    mistakes: 'Encoger los hombros hacia las orejas.'
-  },
-  {
-    id: 'prep-4', type: 'prep', title: 'Al Suelo: Boca Abajo', duration: 15,
-    instructions: 'Acuéstate boca abajo. Brazos estirados al frente formando una "Y", pulgares apuntando al techo.',
-    tips: 'Frente ligeramente apoyada en el suelo.',
-    mistakes: ''
-  },
-  {
-    id: 'work-4-1', type: 'work', title: 'Prone Y-W (Set 1)', duration: 40,
-    instructions: 'Levanta un poco brazos y pecho (Y). Jala codos hacia tus costillas formando una "W". Aprieta espalda y vuelve a la "Y".',
-    tips: 'Imagina que quieres exprimir un limón entre tus omóplatos al hacer la W.',
-    mistakes: 'Usar la espalda baja. El movimiento es de la espalda alta.'
-  },
-  {
-    id: 'rest-3', type: 'rest', title: 'Descanso en el suelo.', duration: 15, next: 'Prone Y-W (Set 2)'
-  },
-  {
-    id: 'work-4-2', type: 'work', title: 'Prone Y-W (Set 2)', duration: 40,
-    instructions: 'Desde posición Y, jala hacia W. Aprieta escápulas. Regresa a Y. Repite lento.',
-    tips: 'Mantén la mirada hacia el suelo, no mires al frente.',
-    mistakes: 'Hacer el movimiento muy rápido por inercia.'
-  },
-  {
-    id: 'prep-5', type: 'prep', title: 'Ponte en 4 Puntos', duration: 10,
-    instructions: 'Colócate sobre manos y rodillas. Manos bajo los hombros, rodillas bajo las caderas.',
-    tips: 'Espalda neutra para empezar.',
-    mistakes: ''
-  },
-  {
-    id: 'work-5', type: 'work', title: 'Gato-Camello', duration: 60,
-    instructions: 'Inhala: Arquea espalda abajo y mira arriba (Vaca). Exhala: Encorva espalda arriba y mete barbilla (Gato).',
-    tips: 'Mueve cada vértebra lentamente. Coordínalo con tu respiración.',
-    mistakes: 'Forzar el rango de movimiento hasta sentir dolor.'
-  }
-];
-
-export default function App() {
-  const [hasStarted, setHasStarted] = useState(false);
-  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(WORKOUT_PHASES[0].duration);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  
-  const audioCtxRef = useRef(null);
-
-  // Inicializar audio contexto de forma segura por interacción del usuario
-  const initAudio = () => {
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume();
-    }
-  };
-
-  // Función para generar pitidos sin necesitar archivos externos
-  const playBeep = useCallback((freq, type, duration) => {
-    if (!soundEnabled || !audioCtxRef.current) return;
-    
-    const osc = audioCtxRef.current.createOscillator();
-    const gainNode = audioCtxRef.current.createGain();
-    
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtxRef.current.currentTime);
-    
-    gainNode.gain.setValueAtTime(0.1, audioCtxRef.current.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + duration);
-    
-    osc.connect(gainNode);
-    gainNode.connect(audioCtxRef.current.destination);
-    
-    osc.start();
-    osc.stop(audioCtxRef.current.currentTime + duration);
-  }, [soundEnabled]);
-
-  // Lógica del temporizador y progreso
-  useEffect(() => {
-    let interval;
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prevTime) => {
-          const newTime = prevTime - 1;
-          
-          // Sonidos de cuenta regresiva (3, 2, 1)
-          if (newTime <= 3 && newTime > 0) {
-            playBeep(440, 'sine', 0.2); // Tono medio
-          }
-          // Sonido de cambio de fase (0)
-          if (newTime === 0) {
-            const nextPhaseType = WORKOUT_PHASES[currentPhaseIndex + 1]?.type;
-            if (nextPhaseType === 'work') {
-              playBeep(880, 'sine', 0.6); // Tono alto inicio trabajo
-            } else if (nextPhaseType === 'rest') {
-              playBeep(330, 'square', 0.4); // Tono bajo descanso
-            } else {
-              playBeep(660, 'sine', 0.4); // Tono transicion
-            }
-          }
-          return newTime;
-        });
-      }, 1000);
-    } else if (isRunning && timeLeft === 0) {
-      if (currentPhaseIndex < WORKOUT_PHASES.length - 1) {
-        setCurrentPhaseIndex(i => i + 1);
-        setTimeLeft(WORKOUT_PHASES[currentPhaseIndex + 1].duration);
-      } else {
-        setIsFinished(true);
-        setIsRunning(false);
-        playBeep(880, 'sine', 0.2);
-        setTimeout(() => playBeep(1100, 'sine', 0.4), 250);
-        setTimeout(() => playBeep(1320, 'sine', 0.6), 550);
-      }
-    }
-
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft, currentPhaseIndex, playBeep]);
-
-  const handleStart = () => {
-    initAudio();
-    setHasStarted(true);
-    setIsRunning(true);
-  };
-
-  const togglePause = () => {
-    setIsRunning(!isRunning);
-  };
-
-  const skipForward = () => {
-    if (currentPhaseIndex < WORKOUT_PHASES.length - 1) {
-      setCurrentPhaseIndex(i => i + 1);
-      setTimeLeft(WORKOUT_PHASES[currentPhaseIndex + 1].duration);
-    } else {
-      setIsFinished(true);
-      setIsRunning(false);
-    }
-  };
-
-  const skipBack = () => {
-    if (currentPhaseIndex > 0) {
-      setCurrentPhaseIndex(i => i - 1);
-      setTimeLeft(WORKOUT_PHASES[currentPhaseIndex - 1].duration);
-    }
-  };
-
-  const resetWorkout = () => {
-    setHasStarted(false);
-    setIsFinished(false);
-    setCurrentPhaseIndex(0);
-    setTimeLeft(WORKOUT_PHASES[0].duration);
-    setIsRunning(false);
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const currentPhase = WORKOUT_PHASES[currentPhaseIndex];
-  const progressPercentage = ((currentPhaseIndex) / WORKOUT_PHASES.length) * 100;
-
-  // --- UI COMPONENTS ---
-
-  if (!hasStarted) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6 font-sans">
-        <div className="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl p-8 text-center border border-slate-700">
-          <h1 className="text-3xl font-bold text-emerald-400 mb-4">Postura Real</h1>
-          <p className="text-slate-300 mb-6 text-lg">
-            Rutina guiada de 10 minutos para corregir la joroba, abrir el pecho y recuperar tu estatura real.
-          </p>
-          <div className="bg-slate-700/50 rounded-xl p-4 mb-8 text-left space-y-3 text-sm">
-            <p className="flex items-center"><CheckCircle2 className="w-5 h-5 text-emerald-400 mr-2" /> Todo es por tiempo, no cuentes repeticiones.</p>
-            <p className="flex items-center"><CheckCircle2 className="w-5 h-5 text-emerald-400 mr-2" /> Audios te avisarán de los cambios.</p>
-            <p className="flex items-center"><CheckCircle2 className="w-5 h-5 text-emerald-400 mr-2" /> Adaptado para estiramiento en tubo.</p>
-          </div>
-          <button 
-            onClick={handleStart}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-xl py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] transform hover:-translate-y-1"
-          >
-            Empezar Rutina
-          </button>
+    <!-- PANTALLA DE INICIO -->
+    <div id="screen-start" class="flex flex-col items-center justify-center min-h-screen p-6 w-full">
+        <div class="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl p-8 text-center border border-slate-700">
+            <h1 class="text-3xl font-bold text-emerald-400 mb-4">Postura Real</h1>
+            <p class="text-slate-300 mb-6 text-lg">
+                Rutina guiada de 10 minutos para corregir la joroba, abrir el pecho y recuperar tu estatura real.
+            </p>
+            <div class="bg-slate-700/50 rounded-xl p-4 mb-8 text-left space-y-3 text-sm">
+                <p class="flex items-center">
+                    <svg class="w-5 h-5 text-emerald-400 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Todo es por tiempo, no cuentes repeticiones.
+                </p>
+                <p class="flex items-center">
+                    <svg class="w-5 h-5 text-emerald-400 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Audios te avisarán de los cambios.
+                </p>
+                <p class="flex items-center">
+                    <svg class="w-5 h-5 text-emerald-400 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Adaptado para estiramiento en tubo.
+                </p>
+            </div>
+            <button onclick="startWorkout()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-xl py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] transform hover:-translate-y-1">
+                Empezar Rutina
+            </button>
         </div>
-      </div>
-    );
-  }
-
-  if (isFinished) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6 font-sans">
-        <div className="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl p-8 text-center border border-emerald-500/50">
-          <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.5)]">
-            <CheckCircle2 className="w-12 h-12 text-slate-900" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">¡Rutina Completada!</h1>
-          <p className="text-slate-300 mb-8 text-lg">
-            Siente cómo tu pecho está más abierto y tu postura es más natural. Haz esto a diario para resultados permanentes.
-          </p>
-          <button 
-            onClick={resetWorkout}
-            className="flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-xl transition-colors"
-          >
-            <RotateCcw className="mr-2" /> Volver al Inicio
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Colores dinámicos según la fase
-  let phaseColor = 'text-blue-400';
-  let bgColor = 'bg-blue-500/10 border-blue-500/30';
-  let timerColor = 'text-blue-400';
-  let ringColor = 'border-blue-500';
-
-  if (currentPhase.type === 'work') {
-    phaseColor = 'text-emerald-400';
-    bgColor = 'bg-emerald-500/10 border-emerald-500/30';
-    timerColor = timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-emerald-400';
-    ringColor = 'border-emerald-500';
-  } else if (currentPhase.type === 'rest') {
-    phaseColor = 'text-amber-400';
-    bgColor = 'bg-amber-500/10 border-amber-500/30';
-    timerColor = 'text-amber-400';
-    ringColor = 'border-amber-400';
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center p-4 sm:p-6 font-sans">
-      
-      {/* Header controls */}
-      <div className="w-full max-w-lg flex justify-between items-center mb-6">
-        <button onClick={resetWorkout} className="p-2 text-slate-400 hover:text-white transition-colors">
-          <RotateCcw className="w-6 h-6" />
-        </button>
-        <span className="text-slate-400 font-medium tracking-widest text-sm uppercase">Postura Real</span>
-        <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-2 text-slate-400 hover:text-white transition-colors">
-          {soundEnabled ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6 text-red-400" />}
-        </button>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="w-full max-w-lg bg-slate-800 h-2 rounded-full mb-8 overflow-hidden">
-        <div 
-          className="h-full bg-emerald-500 transition-all duration-300 ease-out"
-          style={{ width: `${progressPercentage}%` }}
-        ></div>
-      </div>
-
-      {/* Main Card */}
-      <div className={`w-full max-w-lg flex-grow flex flex-col items-center justify-center p-6 rounded-3xl border shadow-2xl transition-colors duration-500 ${bgColor}`}>
-        
-        <h2 className={`text-xl sm:text-2xl font-bold mb-2 text-center ${phaseColor}`}>
-          {currentPhase.type === 'prep' ? 'PREPARACIÓN' : currentPhase.type === 'work' ? '¡A TRABAJAR!' : 'DESCANSO'}
-        </h2>
-        
-        <h3 className="text-2xl sm:text-3xl font-black text-white text-center mb-8 h-16 flex items-center justify-center">
-          {currentPhase.title}
-        </h3>
-
-        {/* Timer Circle */}
-        <div className={`relative w-48 h-48 sm:w-56 sm:h-56 rounded-full border-8 flex items-center justify-center mb-8 shadow-inner ${ringColor}`}>
-          <span className={`text-6xl sm:text-7xl font-mono font-bold tracking-tighter ${timerColor} transition-colors duration-300`}>
-            {formatTime(timeLeft)}
-          </span>
-          {/* Subtle pulse animation when running */}
-          {isRunning && currentPhase.type === 'work' && (
-             <div className="absolute inset-0 rounded-full border-4 border-emerald-500 opacity-20 animate-ping"></div>
-          )}
-        </div>
-
-        {/* Instructions Panel */}
-        <div className="w-full bg-slate-900/50 rounded-2xl p-5 mb-6 min-h-[160px] flex flex-col justify-center border border-slate-700/50">
-          {currentPhase.type === 'rest' ? (
-             <div className="text-center">
-               <p className="text-slate-300 text-lg mb-2">Relaja los músculos. Respira profundo.</p>
-               <p className="text-amber-400 font-bold mt-4">Siguiente: {currentPhase.next}</p>
-             </div>
-          ) : (
-            <>
-              <p className="text-slate-200 text-base sm:text-lg mb-4 text-center">
-                {currentPhase.instructions}
-              </p>
-              
-              <div className="space-y-2 mt-auto">
-                {currentPhase.tips && (
-                  <div className="flex items-start bg-blue-900/20 p-2 rounded-lg text-blue-300 text-sm">
-                    <Lightbulb className="w-5 h-5 mr-2 shrink-0 text-blue-400" />
-                    <span>{currentPhase.tips}</span>
-                  </div>
-                )}
-                {currentPhase.mistakes && (
-                  <div className="flex items-start bg-red-900/20 p-2 rounded-lg text-red-300 text-sm">
-                    <AlertTriangle className="w-5 h-5 mr-2 shrink-0 text-red-400" />
-                    <span>{currentPhase.mistakes}</span>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-      </div>
-
-      {/* Controls */}
-      <div className="w-full max-w-lg flex justify-center items-center space-x-6 mt-8 mb-4">
-        <button 
-          onClick={skipBack}
-          disabled={currentPhaseIndex === 0}
-          className="p-3 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <SkipBack className="w-8 h-8 fill-current" />
-        </button>
-
-        <button 
-          onClick={togglePause}
-          className={`p-6 rounded-full shadow-xl transform hover:scale-105 transition-all ${isRunning ? 'bg-amber-500 text-amber-950 hover:bg-amber-400' : 'bg-emerald-500 text-emerald-950 hover:bg-emerald-400'}`}
-        >
-          {isRunning ? <Pause className="w-12 h-12 fill-current" /> : <Play className="w-12 h-12 fill-current ml-1" />}
-        </button>
-
-        <button 
-          onClick={skipForward}
-          className="p-3 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-        >
-          <SkipForward className="w-8 h-8 fill-current" />
-        </button>
-      </div>
-      
     </div>
-  );
-}
+
+    <!-- PANTALLA DE ENTRENAMIENTO -->
+    <div id="screen-workout" class="hidden flex-col items-center p-4 sm:p-6 min-h-screen w-full">
+        <!-- Header controls -->
+        <div class="w-full max-w-lg flex justify-between items-center mb-6">
+            <button onclick="resetWorkout()" class="p-2 text-slate-400 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            </button>
+            <span class="text-slate-400 font-medium tracking-widest text-sm uppercase">Postura Real</span>
+            <button onclick="toggleSound()" class="p-2 text-slate-400 hover:text-white transition-colors" id="btn-sound">
+                <!-- Icono de Sonido se inserta vía JS -->
+            </button>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full max-w-lg bg-slate-800 h-2 rounded-full mb-8 overflow-hidden">
+            <div id="progress-bar" class="h-full bg-emerald-500 transition-all duration-300 ease-out" style="width: 0%"></div>
+        </div>
+
+        <!-- Main Card -->
+        <div id="main-card" class="w-full max-w-lg flex-grow flex flex-col items-center justify-center p-6 rounded-3xl border shadow-2xl transition-colors duration-500">
+            <h2 id="phase-subtitle" class="text-xl sm:text-2xl font-bold mb-2 text-center">PREPARACIÓN</h2>
+            <h3 id="phase-title" class="text-2xl sm:text-3xl font-black text-white text-center mb-8 h-16 flex items-center justify-center">Título</h3>
+
+            <!-- Timer Circle -->
+            <div id="timer-ring" class="relative w-48 h-48 sm:w-56 sm:h-56 rounded-full border-8 flex items-center justify-center mb-8 shadow-inner transition-colors duration-300">
+                <span id="timer-display" class="text-6xl sm:text-7xl font-mono font-bold tracking-tighter transition-colors duration-300">00:00</span>
+                <div id="pulse-effect" class="absolute inset-0 rounded-full border-4 border-emerald-500 opacity-20 animate-ping hidden"></div>
+            </div>
+
+            <!-- Instructions Panel -->
+            <div class="w-full bg-slate-900/50 rounded-2xl p-5 mb-6 min-h-[160px] flex flex-col justify-center border border-slate-700/50">
+                
+                <!-- Panel de Descanso -->
+                <div id="rest-panel" class="text-center hidden">
+                    <p class="text-slate-300 text-lg mb-2">Relaja los músculos. Respira profundo.</p>
+                    <p id="next-phase-text" class="text-amber-400 font-bold mt-4">Siguiente: ...</p>
+                </div>
+
+                <!-- Panel de Trabajo/Preparación -->
+                <div id="instruction-panel">
+                    <p id="instructions-text" class="text-slate-200 text-base sm:text-lg mb-4 text-center">Instrucciones</p>
+                    
+                    <div class="space-y-2 mt-auto">
+                        <div id="tips-container" class="flex items-start bg-blue-900/20 p-2 rounded-lg text-blue-300 text-sm">
+                            <svg class="w-5 h-5 mr-2 shrink-0 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg>
+                            <span id="tips-text">Tip</span>
+                        </div>
+                        <div id="mistakes-container" class="flex items-start bg-red-900/20 p-2 rounded-lg text-red-300 text-sm">
+                            <svg class="w-5 h-5 mr-2 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <span id="mistakes-text">Error</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="w-full max-w-lg flex justify-center items-center space-x-6 mt-8 mb-4">
+            <button onclick="skipBack()" id="btn-prev" class="p-3 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+                <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+            </button>
+
+            <button onclick="togglePause()" id="btn-play-pause" class="p-6 rounded-full shadow-xl transform hover:scale-105 transition-all bg-emerald-500 text-emerald-950 hover:bg-emerald-400">
+                <!-- Iconos de Play/Pause -->
+                <svg id="icon-play" class="w-12 h-12 fill-current ml-1" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <svg id="icon-pause" class="w-12 h-12 fill-current hidden" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+
+            <button onclick="skipForward()" class="p-3 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+                <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE FIN -->
+    <div id="screen-finish" class="hidden flex-col items-center justify-center min-h-screen p-6 w-full">
+        <div class="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl p-8 text-center border border-emerald-500/50">
+            <div class="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.5)]">
+                <svg class="w-12 h-12 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">¡Rutina Completada!</h1>
+            <p class="text-slate-300 mb-8 text-lg">
+                Siente cómo tu pecho está más abierto y tu postura es más natural. Haz esto a diario para resultados permanentes.
+            </p>
+            <button onclick="resetWorkout()" class="flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-xl transition-colors">
+                <svg class="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                Volver al Inicio
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATOS DE LA RUTINA ---
+        const WORKOUT_PHASES = [
+            { id: 'prep-1', type: 'prep', title: 'Prepárate: Chin Tucks', duration: 10, instructions: 'Siéntate o ponte de pie derecho. Mira al frente relajadamente.', tips: 'Relaja los hombros antes de empezar.', mistakes: 'Evita tensar el cuello.' },
+            { id: 'work-1-1', type: 'work', title: 'Chin Tucks (Set 1)', duration: 40, instructions: 'Lleva la barbilla hacia atrás sin bajar ni subir la cabeza (como sacando papada). Sostén 2 segundos y relaja.', tips: 'Siente el estiramiento en la base del cráneo.', mistakes: 'No mires hacia abajo. El movimiento es horizontal hacia atrás.' },
+            { id: 'rest-1', type: 'rest', title: 'Descanso corto', duration: 15, next: 'Chin Tucks (Set 2)' },
+            { id: 'work-1-2', type: 'work', title: 'Chin Tucks (Set 2)', duration: 40, instructions: 'Lleva la barbilla hacia atrás (sacando papada). Sostén 2 segundos y relaja. Repite lento.', tips: 'Mantén la mirada fija en un punto al frente.', mistakes: 'No empujes con fuerza excesiva.' },
+            { id: 'prep-2L', type: 'prep', title: 'Ve al Tubo: Brazo Izquierdo', duration: 15, instructions: 'Párate junto al tubo. Apoya tu antebrazo izquierdo en el tubo, con el codo a la altura de tu hombro (90 grados).', tips: 'Prepárate para girar tu cuerpo suavemente a la derecha.', mistakes: 'No subas el codo por encima de tu hombro.' },
+            { id: 'work-2L', type: 'work', title: 'Estiramiento Pectoral (Izq)', duration: 30, instructions: 'Gira tu torso suavemente hacia la derecha, alejándote del brazo apoyado. Mantén la posición.', tips: 'Respira profundo e infla el pecho. Siente cómo se abre.', mistakes: 'No des tirones. Es un estiramiento estático y suave.' },
+            { id: 'prep-2R', type: 'prep', title: 'Cambio: Brazo Derecho', duration: 10, instructions: 'Date la vuelta. Apoya el antebrazo derecho en el tubo, codo a la altura del hombro.', tips: 'Acomódate rápido.', mistakes: '' },
+            { id: 'work-2R', type: 'work', title: 'Estiramiento Pectoral (Der)', duration: 30, instructions: 'Gira el torso hacia la izquierda, alejándote del brazo derecho. Mantén la posición.', tips: 'Saca el pecho ligeramente hacia adelante.', mistakes: 'Si duele el hombro (articulación), baja un poco el codo.' },
+            { id: 'prep-3', type: 'prep', title: 'Busca una Pared', duration: 15, instructions: 'Apoya talones, glúteos, espalda alta y cabeza contra una pared plana.', tips: 'Flexiona ligeramente las rodillas si es más cómodo.', mistakes: 'Evita despegar la cabeza.' },
+            { id: 'work-3-1', type: 'work', title: 'Wall Angels (Set 1)', duration: 45, instructions: 'Codos a 90°. Pega el dorso de las manos a la pared. Desliza brazos hacia arriba y abajo lentamente.', tips: 'Aprieta el abdomen para que tu espalda baja no se despegue demasiado.', mistakes: 'Despegar las manos o codos de la pared. Si pasa, sube menos los brazos.' },
+            { id: 'rest-2', type: 'rest', title: 'Descanso. Relaja brazos.', duration: 15, next: 'Wall Angels (Set 2)' },
+            { id: 'work-3-2', type: 'work', title: 'Wall Angels (Set 2)', duration: 45, instructions: 'Sube y baja los brazos deslizando el dorso de las manos por la pared.', tips: 'Concéntrate en la tensión en tu espalda alta (entre los omóplatos).', mistakes: 'Encoger los hombros hacia las orejas.' },
+            { id: 'prep-4', type: 'prep', title: 'Al Suelo: Boca Abajo', duration: 15, instructions: 'Acuéstate boca abajo. Brazos estirados al frente formando una "Y", pulgares apuntando al techo.', tips: 'Frente ligeramente apoyada en el suelo.', mistakes: '' },
+            { id: 'work-4-1', type: 'work', title: 'Prone Y-W (Set 1)', duration: 40, instructions: 'Levanta un poco brazos y pecho (Y). Jala codos hacia tus costillas formando una "W". Aprieta espalda y vuelve a la "Y".', tips: 'Imagina que quieres exprimir un limón entre tus omóplatos al hacer la W.', mistakes: 'Usar la espalda baja. El movimiento es de la espalda alta.' },
+            { id: 'rest-3', type: 'rest', title: 'Descanso en el suelo.', duration: 15, next: 'Prone Y-W (Set 2)' },
+            { id: 'work-4-2', type: 'work', title: 'Prone Y-W (Set 2)', duration: 40, instructions: 'Desde posición Y, jala hacia W. Aprieta escápulas. Regresa a Y. Repite lento.', tips: 'Mantén la mirada hacia el suelo, no mires al frente.', mistakes: 'Hacer el movimiento muy rápido por inercia.' },
+            { id: 'prep-5', type: 'prep', title: 'Ponte en 4 Puntos', duration: 10, instructions: 'Colócate sobre manos y rodillas. Manos bajo los hombros, rodillas bajo las caderas.', tips: 'Espalda neutra para empezar.', mistakes: '' },
+            { id: 'work-5', type: 'work', title: 'Gato-Camello', duration: 60, instructions: 'Inhala: Arquea espalda abajo y mira arriba (Vaca). Exhala: Encorva espalda arriba y mete barbilla (Gato).', tips: 'Mueve cada vértebra lentamente. Coordínalo con tu respiración.', mistakes: 'Forzar el rango de movimiento hasta sentir dolor.' }
+        ];
+
+        // --- ESTADO DE LA APP ---
+        let currentPhaseIndex = 0;
+        let timeLeft = WORKOUT_PHASES[0].duration;
+        let isRunning = false;
+        let soundEnabled = true;
+        let timerInterval = null;
+        let audioCtx = null;
+
+        // --- ICONOS SVG ---
+        const iconVolumeOn = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>`;
+        const iconVolumeOff = `<svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`;
+
+        // --- LÓGICA DE AUDIO ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playBeep(freq, type, duration) {
+            if (!soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // --- LÓGICA DE NAVEGACIÓN DE PANTALLAS ---
+        function showScreen(screenId) {
+            ['screen-start', 'screen-workout', 'screen-finish'].forEach(id => {
+                const el = document.getElementById(id);
+                if (id === screenId) {
+                    el.classList.remove('hidden');
+                    el.classList.add('flex');
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                }
+            });
+        }
+
+        // --- LÓGICA DE UI DEL ENTRENAMIENTO ---
+        function updateUI() {
+            const phase = WORKOUT_PHASES[currentPhaseIndex];
+            
+            // Barra de progreso
+            const progressPercentage = (currentPhaseIndex / WORKOUT_PHASES.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+
+            // Textos principales
+            document.getElementById('phase-title').innerText = phase.title;
+            
+            // Formatear Tiempo
+            const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const secs = (timeLeft % 60).toString().padStart(2, '0');
+            const timerDisplay = document.getElementById('timer-display');
+            timerDisplay.innerText = `${mins}:${secs}`;
+
+            // Resetear clases dinámicas
+            const mainCard = document.getElementById('main-card');
+            const timerRing = document.getElementById('timer-ring');
+            const phaseSubtitle = document.getElementById('phase-subtitle');
+            
+            mainCard.className = "w-full max-w-lg flex-grow flex flex-col items-center justify-center p-6 rounded-3xl border shadow-2xl transition-colors duration-500";
+            timerRing.className = "relative w-48 h-48 sm:w-56 sm:h-56 rounded-full border-8 flex items-center justify-center mb-8 shadow-inner transition-colors duration-300";
+            timerDisplay.className = "text-6xl sm:text-7xl font-mono font-bold tracking-tighter transition-colors duration-300";
+            phaseSubtitle.className = "text-xl sm:text-2xl font-bold mb-2 text-center";
+
+            const instructionPanel = document.getElementById('instruction-panel');
+            const restPanel = document.getElementById('rest-panel');
+            const tipsContainer = document.getElementById('tips-container');
+            const mistakesContainer = document.getElementById('mistakes-container');
+
+            if (phase.type === 'work') {
+                mainCard.classList.add('bg-emerald-500/10', 'border-emerald-500/30');
+                timerRing.classList.add('border-emerald-500');
+                phaseSubtitle.classList.add('text-emerald-400');
+                phaseSubtitle.innerText = '¡A TRABAJAR!';
+                
+                timerDisplay.classList.add(timeLeft <= 5 ? 'text-red-400' : 'text-emerald-400');
+                if (timeLeft <= 5 && isRunning) timerDisplay.classList.add('animate-pulse');
+
+                instructionPanel.classList.remove('hidden');
+                restPanel.classList.add('hidden');
+                document.getElementById('instructions-text').innerText = phase.instructions;
+
+            } else if (phase.type === 'rest') {
+                mainCard.classList.add('bg-amber-500/10', 'border-amber-500/30');
+                timerRing.classList.add('border-amber-400');
+                timerDisplay.classList.add('text-amber-400');
+                phaseSubtitle.classList.add('text-amber-400');
+                phaseSubtitle.innerText = 'DESCANSO';
+
+                instructionPanel.classList.add('hidden');
+                restPanel.classList.remove('hidden');
+                document.getElementById('next-phase-text').innerText = "Siguiente: " + phase.next;
+            } else {
+                mainCard.classList.add('bg-blue-500/10', 'border-blue-500/30');
+                timerRing.classList.add('border-blue-500');
+                timerDisplay.classList.add('text-blue-400');
+                phaseSubtitle.classList.add('text-blue-400');
+                phaseSubtitle.innerText = 'PREPARACIÓN';
+
+                instructionPanel.classList.remove('hidden');
+                restPanel.classList.add('hidden');
+                document.getElementById('instructions-text').innerText = phase.instructions;
+            }
+
+            // Tips & Mistakes
+            if (phase.tips && phase.type !== 'rest') {
+                tipsContainer.classList.remove('hidden');
+                document.getElementById('tips-text').innerText = phase.tips;
+            } else {
+                tipsContainer.classList.add('hidden');
+            }
+
+            if (phase.mistakes && phase.type !== 'rest') {
+                mistakesContainer.classList.remove('hidden');
+                document.getElementById('mistakes-text').innerText = phase.mistakes;
+            } else {
+                mistakesContainer.classList.add('hidden');
+            }
+
+            // Play/Pause Button Style
+            const btnPlayPause = document.getElementById('btn-play-pause');
+            const iconPlay = document.getElementById('icon-play');
+            const iconPause = document.getElementById('icon-pause');
+            
+            if (isRunning) {
+                btnPlayPause.classList.remove('bg-emerald-500', 'text-emerald-950', 'hover:bg-emerald-400');
+                btnPlayPause.classList.add('bg-amber-500', 'text-amber-950', 'hover:bg-amber-400');
+                iconPlay.classList.add('hidden');
+                iconPause.classList.remove('hidden');
+            } else {
+                btnPlayPause.classList.remove('bg-amber-500', 'text-amber-950', 'hover:bg-amber-400');
+                btnPlayPause.classList.add('bg-emerald-500', 'text-emerald-950', 'hover:bg-emerald-400');
+                iconPlay.classList.remove('hidden');
+                iconPause.classList.add('hidden');
+            }
+
+            // Disable Prev button logic
+            const btnPrev = document.getElementById('btn-prev');
+            if (currentPhaseIndex === 0) {
+                btnPrev.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btnPrev.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            // Pulse effect 
+            const pulseEffect = document.getElementById('pulse-effect');
+            if (isRunning && phase.type === 'work') pulseEffect.classList.remove('hidden');
+            else pulseEffect.classList.add('hidden');
+
+            // Sound icon
+            document.getElementById('btn-sound').innerHTML = soundEnabled ? iconVolumeOn : iconVolumeOff;
+        }
+
+        // --- BUCLE DEL TEMPORIZADOR ---
+        function runTimer() {
+            if (isRunning && timeLeft > 0) {
+                timeLeft--;
+                
+                // Sonidos
+                if (timeLeft <= 3 && timeLeft > 0) playBeep(440, 'sine', 0.2);
+                if (timeLeft === 0) {
+                    const nextPhase = WORKOUT_PHASES[currentPhaseIndex + 1];
+                    if (nextPhase) {
+                        if (nextPhase.type === 'work') playBeep(880, 'sine', 0.6);
+                        else if (nextPhase.type === 'rest') playBeep(330, 'square', 0.4);
+                        else playBeep(660, 'sine', 0.4);
+                    }
+                }
+                updateUI();
+            } else if (isRunning && timeLeft === 0) {
+                if (currentPhaseIndex < WORKOUT_PHASES.length - 1) {
+                    currentPhaseIndex++;
+                    timeLeft = WORKOUT_PHASES[currentPhaseIndex].duration;
+                    updateUI();
+                } else {
+                    finishWorkout();
+                }
+            }
+        }
+
+        // --- CONTROLES DE LA APP ---
+        function startWorkout() {
+            initAudio();
+            currentPhaseIndex = 0;
+            timeLeft = WORKOUT_PHASES[0].duration;
+            isRunning = true;
+            showScreen('screen-workout');
+            updateUI();
+            
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(runTimer, 1000);
+        }
+
+        function togglePause() {
+            isRunning = !isRunning;
+            updateUI();
+        }
+
+        function skipForward() {
+            if (currentPhaseIndex < WORKOUT_PHASES.length - 1) {
+                currentPhaseIndex++;
+                timeLeft = WORKOUT_PHASES[currentPhaseIndex].duration;
+                updateUI();
+            } else {
+                finishWorkout();
+            }
+        }
+
+        function skipBack() {
+            if (currentPhaseIndex > 0) {
+                currentPhaseIndex--;
+                timeLeft = WORKOUT_PHASES[currentPhaseIndex].duration;
+                updateUI();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            updateUI();
+        }
+
+        function finishWorkout() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            playBeep(880, 'sine', 0.2);
+            setTimeout(() => playBeep(1100, 'sine', 0.4), 250);
+            setTimeout(() => playBeep(1320, 'sine', 0.6), 550);
+            showScreen('screen-finish');
+        }
+
+        function resetWorkout() {
+            isRunning = false;
+            if (timerInterval) clearInterval(timerInterval);
+            showScreen('screen-start');
+        }
+
+        // Inicializar iconos iniciales
+        document.getElementById('btn-sound').innerHTML = iconVolumeOn;
+    </script>
+</body>
+</html>
