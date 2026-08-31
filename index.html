@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PosturaFit - Reeducación Postural & Regla 30/30</title>
+  
+  <!-- Configuración PWA y iOS -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PosturaFit">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f172a'/><path d='M50 15 C30 15 25 35 25 50 C25 65 30 85 50 85 C70 85 75 65 75 50 C75 35 70 15 50 15 Z' stroke='%2310b981' stroke-width='6' fill='none'/><circle cx='50' cy='30' r='6' fill='%2306b6d4'/><path d='M40 50 L60 50 M50 40 L50 70' stroke='%2310b981' stroke-width='5' stroke-linecap='round'/></svg>">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#0f172a',
+              card: '#1e293b',
+              border: '#334155',
+              mint: '#10b981',
+              mintHover: '#059669',
+              cyan: '#06b6d4',
+              accent: '#3b82f6',
+              warning: '#f59e0b',
+              danger: '#ef4444'
+            }
+          },
+          fontFamily: {
+            sans: ['System-UI', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Estilos personalizados para animaciones y scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #10b981;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.7); }
+    }
+
+    .pulse-glow {
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes timerAlert {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+
+    .animate-alert {
+      animation: timerAlert 0.8s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-brand-dark text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-brand-mint selection:text-brand-dark">
+
+  <!-- ==========================================
+       HEADER PRINCIPAL & NAVEGACIÓN
+  ========================================== -->
+  <header class="sticky top-0 z-40 bg-brand-dark/95 backdrop-blur border-b border-brand-border px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      
+      <!-- LOGO -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-mint to-brand-cyan flex items-center justify-center shadow-lg shadow-brand-mint/20">
+          <svg class="w-6 h-6 text-brand-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            POSTURA<span class="text-brand-mint">FIT</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-mint/10 text-brand-mint border border-brand-mint/20">PRO</span>
+          </h1>
+          <p class="text-xs text-slate-400">Reeducación Neuromotora & Regla 30/30</p>
+        </div>
+      </div>
+
+      <!-- ACCIONES HEADER -->
+      <div class="flex items-center gap-2">
+        <!-- BOTÓN INSTALAR PWA (Oculto por defecto) -->
+        <button id="btnPwaInstall" class="hidden text-xs bg-brand-mint/20 hover:bg-brand-mint/30 text-brand-mint font-medium px-3 py-1.5 rounded-lg border border-brand-mint/30 transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span>Instalar App</span>
+        </button>
+
+        <!-- PROBAR SONIDO / VIBRACIÓN -->
+        <button onclick="testAlerts()" title="Probar Alarma y Vibración" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+          <svg class="w-4 h-4 text-brand-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+          </svg>
+          <span class="hidden sm:inline">Probar Alarma</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- PESTAÑAS DE NAVEGACIÓN -->
+    <div class="max-w-6xl mx-auto mt-3 flex border-b border-brand-border">
+      <button id="tabBtnRutina" onclick="switchTab('rutina')" class="flex-1 py-2 text-center text-sm font-semibold border-b-2 border-brand-mint text-brand-mint flex items-center justify-center gap-2 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        <span>Rutina Postural</span>
+      </button>
+      <button id="tabBtnOficina" onclick="switchTab('oficina')" class="flex-1 py-2 text-center text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>Modo Oficina (30/30)</span>
+        <span id="badgeOficinaStatus" class="w-2 h-2 rounded-full bg-slate-500"></span>
+      </button>
+      <button id="tabBtnGuia" onclick="switchTab('guia')" class="flex-1 py-2 text-center text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+        <span>Guía Técnica</span>
+      </button>
+    </div>
+  </header>
+
+
+  <!-- ==========================================
+       CONTENIDO PRINCIPAL
+  ========================================== -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- ====================================================
+         SECCIÓN 1: RUTINA POSTURAL (ENTRENAMIENTO & CRONÓMETRO)
+    ==================================================== -->
+    <section id="secRutina" class="space-y-6">
+
+      <!-- SELECTOR DE FASE & RESUMEN -->
+      <div class="bg-brand-card rounded-2xl p-5 border border-brand-border shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-border/60 pb-4">
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wider text-brand-mint">Plan de Entrenamiento Postural</span>
+            <h2 id="phaseTitle" class="text-xl font-bold text-white mt-0.5">Cargando fase...</h2>
+            <p id="phaseEnfoque" class="text-sm text-slate-300 mt-1">Cargando enfoque...</p>
+          </div>
+          
+          <!-- BOTONES DE CAMBIO DE FASE -->
+          <div class="flex items-center bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/60 self-start md:self-auto">
+            <button onclick="changePhase(0)" id="btnFase0" class="px-3 py-1.5 text-xs font-bold rounded-lg transition">Fase 1 (S1-4)</button>
+            <button onclick="changePhase(1)" id="btnFase1" class="px-3 py-1.5 text-xs font-bold rounded-lg transition">Fase 2 (S5-8)</button>
+            <button onclick="changePhase(2)" id="btnFase2" class="px-3 py-1.5 text-xs font-bold rounded-lg transition">Fase 3 (S9-12)</button>
+          </div>
+        </div>
+
+        <!-- METADATOS DE LA FASE -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-1">
+          <div class="bg-slate-900/40 rounded-xl p-3 border border-slate-800">
+            <span class="text-xs text-slate-400 block">Semanas</span>
+            <span id="phaseWeeks" class="text-sm font-semibold text-brand-cyan">Semanas 1 a 4</span>
+          </div>
+          <div class="bg-slate-900/40 rounded-xl p-3 border border-slate-800">
+            <span class="text-xs text-slate-400 block">Frecuencia</span>
+            <span id="phaseFreq" class="text-sm font-semibold text-white">5 a 6 días/sem</span>
+          </div>
+          <div class="bg-slate-900/40 rounded-xl p-3 border border-slate-800">
+            <span class="text-xs text-slate-400 block">Duración Aprox.</span>
+            <span id="phaseDur" class="text-sm font-semibold text-white">15-20 min</span>
+          </div>
+          <div class="bg-slate-900/40 rounded-xl p-3 border border-slate-800">
+            <span class="text-xs text-slate-400 block">Total Ejercicios</span>
+            <span id="phaseTotalEx" class="text-sm font-semibold text-brand-mint">6 Ejercicios</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- LAYOUT DEL ENTRENADOR: CRONÓMETRO + LISTA DE EJERCICIOS -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- PANEL IZQUIERDO: CRONÓMETRO Y CONTROL DEL EJERCICIO ACTIVO (7 COLS EN LG) -->
+        <div class="lg:col-span-7 flex flex-col">
+          <div class="bg-brand-card rounded-2xl p-6 border border-brand-border shadow-xl flex-1 flex flex-col justify-between relative overflow-hidden">
+            
+            <!-- HEADER DE EJERCICIO ACTIVO -->
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span id="exStepBadge" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-brand-mint/20 text-brand-mint border border-brand-mint/30">
+                    Ejercicio 1 de 6
+                  </span>
+                  <span id="exTypeBadge" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-800 text-slate-300">
+                    Por Tiempo
+                  </span>
+                </div>
+                <h3 id="exActiveName" class="text-2xl font-extrabold text-white mt-2 leading-tight">
+                  Nombre del Ejercicio
+                </h3>
+                <p id="exActiveFocus" class="text-xs text-slate-400 mt-1">Foco técnico del ejercicio</p>
+              </div>
+
+              <!-- ICONO DEL EJERCICIO -->
+              <div id="exActiveIcon" class="w-14 h-14 rounded-2xl bg-slate-800/80 border border-slate-700/60 p-2.5 flex items-center justify-center text-brand-mint shrink-0 shadow-inner">
+                <!-- SVG Dinámico -->
+              </div>
+            </div>
+
+            <!-- DETALLES DE SERIES / REPS Y RPE -->
+            <div class="grid grid-cols-3 gap-2 my-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 text-center">
+              <div>
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Series</span>
+                <span id="exDetailSeries" class="text-sm font-bold text-white">2</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Target</span>
+                <span id="exDetailTarget" class="text-sm font-bold text-brand-cyan">10 reps (3-5s)</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider block">RPE / Esfuerzo</span>
+                <span id="exDetailRpe" class="text-sm font-bold text-brand-warning">4-5</span>
+              </div>
+            </div>
+
+            <!-- ÁREA PRINCIPAL DEL CRONÓMETRO / RELOJ DINÁMICO -->
+            <div class="my-6 flex flex-col items-center justify-center relative">
+              
+              <!-- ANILLO DE PROGRESO CIRCULAR -->
+              <div class="relative w-56 h-56 flex items-center justify-center">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <!-- Círculo fondo -->
+                  <circle cx="50" cy="50" r="42" stroke="currentColor" stroke-width="8" class="text-slate-800" fill="transparent"/>
+                  <!-- Círculo progreso -->
+                  <circle id="timerProgressRing" cx="50" cy="50" r="42" stroke="currentColor" stroke-width="8" class="text-brand-mint transition-all duration-300" stroke-dasharray="263.89" stroke-dashoffset="0" stroke-linecap="round" fill="transparent"/>
+                </svg>
+
+                <!-- TEXTO DEL TEMPORIZADOR AL CENTRO -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <!-- SI ES POR TIEMPO O DESCANSO -->
+                  <div id="timerTimeDisplay" class="text-5xl font-black tracking-tight text-white font-mono">
+                    04:00
+                  </div>
+                  <!-- SUBTÍTULO (EJ. DESCANSO / SERIE 1 DE 3) -->
+                  <div id="timerSubDisplay" class="text-xs font-bold uppercase tracking-wider text-brand-mint mt-1">
+                    Tiempo Restante
+                  </div>
+                </div>
+              </div>
+
+              <!-- INSTRUCCIÓN O TEMPO -->
+              <div id="timerInstructionBox" class="mt-4 px-4 py-2 bg-slate-900/80 rounded-xl border border-slate-800 text-xs text-slate-300 text-center max-w-md">
+                Instrucciones del ejercicio aquí...
+              </div>
+            </div>
+
+
+            <!-- BOTONES DE CONTROL DEL TEMPORIZADOR -->
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                
+                <!-- PLAY / PAUSA -->
+                <button id="btnTimerPlayPause" onclick="toggleTimer()" class="flex-1 py-3.5 px-4 bg-brand-mint hover:bg-brand-mintHover text-brand-dark font-black text-sm rounded-xl shadow-lg shadow-brand-mint/20 transition flex items-center justify-center gap-2">
+                  <svg id="iconPlay" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <svg id="iconPause" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                  </svg>
+                  <span id="txtPlayPause">INICIAR</span>
+                </button>
+
+                <!-- REINICIAR -->
+                <button onclick="resetTimer()" title="Reiniciar ejercicio" class="p-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
+
+                <!-- ACCIÓN SERIE (Para ejercicios por Repeticiones) -->
+                <button id="btnCompleteSet" onclick="handleSetCompletion()" class="hidden flex-1 py-3.5 px-4 bg-brand-cyan hover:bg-cyan-500 text-brand-dark font-black text-sm rounded-xl shadow-lg shadow-brand-cyan/20 transition flex items-center justify-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <span id="txtCompleteSet">COMPLETAR SERIE 1</span>
+                </button>
+              </div>
+
+              <!-- CONTROLES ANTERIOR / SIGUIENTE -->
+              <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+                <button onclick="prevExercise()" class="hover:text-white flex items-center gap-1 font-semibold transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                  </svg>
+                  Anterior
+                </button>
+
+                <button onclick="nextExercise()" class="hover:text-white flex items-center gap-1 font-semibold text-brand-mint transition">
+                  Siguiente Ejercicio
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- PANEL DERECHO: LISTA DE EJERCICIOS DE LA FASE (5 COLS EN LG) -->
+        <div class="lg:col-span-5 space-y-3">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+            <span>Lista de Ejercicios</span>
+            <span id="exProgressCount" class="text-xs text-brand-mint">0 / 6 completados</span>
+          </h3>
+
+          <div id="exerciseCardsContainer" class="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+            <!-- Renderizado dinámico de tarjetas -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ====================================================
+         SECCIÓN 2: MÓDULO DE OFICINA INDEPENDIENTE (REGLA 30/30)
+    ==================================================== -->
+    <section id="secOficina" class="hidden space-y-6">
+
+      <!-- TARJETA CABECERA MÓDULO OFICINA -->
+      <div class="bg-brand-card rounded-2xl p-6 border border-brand-border shadow-xl relative overflow-hidden">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div class="space-y-2 max-w-2xl">
+            <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/30">
+              Sistema en Segundo Plano
+            </span>
+            <h2 class="text-2xl font-bold text-white">Modo Oficina: Regla 30 / 30</h2>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Evita el estrés postural acumulado en el escritorio. Este temporizador independiente te alerta cada <strong>30 minutos</strong> para realizar una micropausa activa de <strong>30 segundos</strong> alternando cíclicamente entre 3 hábitos clave.
+            </p>
+          </div>
+
+          <!-- INTERRUPTOR PRINCIPAL (TOGGLE) -->
+          <div class="flex flex-col items-center bg-slate-900/90 p-4 rounded-2xl border border-slate-800 shrink-0 w-full md:w-auto">
+            <span class="text-xs text-slate-400 font-semibold mb-2">Estado del Sistema</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="toggleOfficeMode" onchange="toggleOfficeMode()" class="sr-only peer">
+              <div class="w-14 h-8 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-brand-mint"></div>
+            </label>
+            <span id="officeStatusLabel" class="text-xs font-bold text-slate-400 mt-2">DESACTIVADO</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD DEL MÓDULO OFICINA -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- TARJETA CONTAJE 30 MIN -->
+        <div class="bg-brand-card rounded-2xl p-6 border border-brand-border shadow-xl flex flex-col justify-between items-center text-center">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Próxima Micropausa En</span>
+          
+          <div class="my-4">
+            <div id="officeCountdownDisplay" class="text-5xl font-black text-white font-mono tracking-tight">
+              30:00
+            </div>
+            <p id="officeNextHabitName" class="text-xs font-semibold text-brand-cyan mt-2">
+              Siguiente: Chin Tucks Sentados
+            </p>
+          </div>
+
+          <button onclick="triggerOfficeBreakNow()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4 text-brand-mint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+            </svg>
+            Simular / Probar Pausa Ahora
+          </button>
+        </div>
+
+        <!-- LISTA DE LOS 3 HÁBITOS CÍCLICOS -->
+        <div class="md:col-span-2 bg-brand-card rounded-2xl p-6 border border-brand-border shadow-xl space-y-4">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span>Hábitos de la Regla 30/30 (Secuencia Cíclica)</span>
+          </h3>
+
+          <div id="officeHabitsList" class="space-y-3">
+            <!-- Render dinámico de los hábitos de oficina -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ====================================================
+         SECCIÓN 3: GUÍA TÉCNICA Y FICHA DE EJERCICIOS
+    ==================================================== -->
+    <section id="secGuia" class="hidden space-y-6">
+
+      <div class="bg-brand-card rounded-2xl p-6 border border-brand-border shadow-xl">
+        <h2 class="text-2xl font-bold text-white">Guía y Fundamentos de Reeducación Postural</h2>
+        <p class="text-sm text-slate-300 mt-1">
+          Principios biomecánicos para suprimir la hiperactividad del esternocleidomastoideo (ECM) y pectorales, restaurando el control neuromotor de los flexores cervicales profundos y retractores escapulares.
+        </p>
+      </div>
+
+      <!-- ESCALA RPE EXPLICADA -->
+      <div class="bg-brand-card rounded-2xl p-6 border border-brand-border shadow-xl">
+        <h3 class="text-base font-bold text-white mb-3">Escala RPE (Nivel de Esfuerzo Percibido)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+            <span class="font-bold text-brand-mint block text-sm">RPE 3 - 4</span>
+            <p class="text-slate-300 mt-1">Esfuerzo muy suave a ligero. Enfoque puramente en relajación fascial y respiración diafragmática.</p>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+            <span class="font-bold text-brand-cyan block text-sm">RPE 5 - 6</span>
+            <p class="text-slate-300 mt-1">Esfuerzo moderado. Activación consciente sin llegar a la fatiga compensatoria ni temblores.</p>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+            <span class="font-bold text-brand-warning block text-sm">RPE 7 - 8</span>
+            <p class="text-slate-300 mt-1">Esfuerzo intenso pero controlado. Reto de fatiga para musculatura tónica sosteniendo alineación.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FICHAS TÉCNICAS COMPLETAS DETALLADAS -->
+      <div id="guiaFullCards" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Generado dinámicamente -->
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ==========================================
+       MODAL DE ALERTA DE MICROPAUSA (MODO OFICINA)
+  ========================================== -->
+  <div id="officeBreakModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-brand-card border-2 border-brand-mint rounded-3xl max-w-lg w-full p-6 shadow-2xl pulse-glow animate-alert text-center space-y-5 relative">
+      
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-mint/20 text-brand-mint text-xs font-bold border border-brand-mint/30">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        ¡REGLA 30/30: MICROPAUSA ACTIVA!
+      </div>
+
+      <div id="modalHabitIcon" class="w-20 h-20 mx-auto rounded-2xl bg-brand-mint/10 border border-brand-mint/30 p-4 flex items-center justify-center text-brand-mint">
+        <!-- SVG Hábito -->
+      </div>
+
+      <div>
+        <h3 id="modalHabitTitle" class="text-2xl font-black text-white">Nombre del Hábito</h3>
+        <p id="modalHabitDesc" class="text-xs text-brand-cyan font-semibold mt-1">Descripción corta</p>
+      </div>
+
+      <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-xs text-slate-200 text-left leading-relaxed">
+        <strong class="text-brand-mint block mb-1">Cómo realizarlo (30 segundos):</strong>
+        <p id="modalHabitInstruccion">Instrucciones paso a paso del hábito...</p>
+      </div>
+
+      <!-- CRONÓMETRO DE 30 SEGUNDOS -->
+      <div class="py-2">
+        <div id="modal30sTimer" class="text-4xl font-black text-brand-mint font-mono">00:30</div>
+        <p class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Segundos Restantes de Pausa</p>
+      </div>
+
+      <button onclick="closeOfficeBreakModal()" class="w-full py-3.5 bg-brand-mint hover:bg-brand-mintHover text-brand-dark font-black text-sm rounded-xl shadow-lg shadow-brand-mint/20 transition">
+        ¡HÁBITO COMPLETADO!
+      </button>
+
+    </div>
+  </div>
+
+
+  <!-- ==========================================
+       SCRIPT PRINCIPAL JS (CON RUTINA_CONFIG)
+  ========================================== -->
+  <script>
+    /* ===================================================================
+       1. DATOS DE LA RUTINA POSTURAL (La Fuente de Verdad)
+    =================================================================== */
+    const RUTINA_CONFIG = {
+      fases: [
+        {
+          id: "fase1",
+          nombre: "FASE 1: Reeducación Neuromotora y Liberación Fascial",
+          semanas: "Semanas 1 a 4",
+          frecuencia: "5 a 6 días/semana",
+          duracion: "15-20 minutos",
+          enfoque: "Suprimir hiperactividad del ECM y pectorales en el suelo.",
+          badgeColor: "emerald",
+          ejercicios: [
+            {
+              id: "f1_e1",
+              nombre: "Extensión Torácica Aislada en Suelo",
+              tipo: "reps",
+              series: 2,
+              reps: 10,
+              sostenimientoSeg: 4, // 3-5s
+              descansoSeg: 30,
+              rpe: "4-5",
+              foco: "Movilidad de columna dorsal sin compensar con zona lumbar.",
+              instrucciones: "En suelo supino o cuadrúpeda, apoya la nuca y extiende la columna torácica sosteniendo 3 a 5 segundos por repetición.",
+              svgIcon: "thoracic"
+            },
+            {
+              id: "f1_e2",
+              nombre: "Postura Souchard (Rana en Suelo con Brazos Abiertos)",
+              tipo: "tiempo",
+              duracionSeg: 240, // 4 mins (3-5 min)
+              series: 1,
+              descansoSeg: 60,
+              rpe: "3-4",
+              foco: "Relajación fascial global de la cadena anterior.",
+              instrucciones: "Tumbado boca arriba, junta las plantas de los pies, abre brazos a 45° con palmas hacia arriba. Respira diafragmáticamente de forma continua.",
+              svgIcon: "frog"
+            },
+            {
+              id: "f1_e3",
+              nombre: "Flexión Craneocervical Activa (Chin Tucks en Suelo)",
+              tipo: "reps",
+              series: 3,
+              reps: 10,
+              sostenimientoSeg: 8, // 5-10s
+              descansoSeg: 45,
+              rpe: "5-6",
+              foco: "Activación profunda de flexores cervicales sin reclutar ECM.",
+              instrucciones: "En supino, retracción de barbilla ('doble mentón') presionando suavemente la nuca hacia abajo. Sostén de 5 a 10s por repetición.",
+              svgIcon: "chintuck"
+            },
+            {
+              id: "f1_e4",
+              nombre: "Levantamientos en 'Y' (Y-Raises) en Prono",
+              tipo: "reps",
+              series: 3,
+              reps: 12,
+              sostenimientoSeg: 2,
+              descansoSeg: 60,
+              rpe: "7-8",
+              foco: "Fortalecimiento del trapecio inferior y estabilizadores escapulares.",
+              instrucciones: "Boca abajo, brazos en 'Y' a 120° con pulgares arriba. Eleva brazos juntando escápulas y sostiene la contracción 2 segundos.",
+              svgIcon: "yraise"
+            },
+            {
+              id: "f1_e5",
+              nombre: "Deslizamientos de Pared (Wall Angels)",
+              tipo: "reps",
+              series: 2,
+              reps: 10,
+              tempo: "3s subida, 1s pausa, 3s bajada",
+              sostenimientoSeg: 1,
+              descansoSeg: 60,
+              rpe: "6-7",
+              foco: "Control motor escapulotorácico y movilidad activa de hombros.",
+              instrucciones: "Espalda y brazos pegados a la pared en posición 'W'. Desliza hacia 'V' manteniendo contacto lumbar y dorsal a tempo lento.",
+              svgIcon: "wallangel"
+            },
+            {
+              id: "f1_e6",
+              nombre: "Postura de Alivio de Bruegger en Bipedestación",
+              tipo: "tiempo",
+              duracionSeg: 60,
+              series: 1,
+              descansoSeg: 0,
+              rpe: "5-6",
+              foco: "Reajuste postural y descompresión final.",
+              instrucciones: "De pie, extiende la columna, rotación externa de hombros, palmas al frente, retracción cervical sostenida por 60 segundos.",
+              svgIcon: "bruegger"
+            }
+          ]
+        },
+        {
+          id: "fase2",
+          nombre: "FASE 2: Sobrecarga Excéntrica e Hipertrofia Postural",
+          semanas: "Semanas 5 a 8",
+          frecuencia: "4 a 5 días/semana",
+          duracion: "20-25 minutos",
+          enfoque: "Resistencia a la fatiga de flexores cervicales profundos y retractores escapulares.",
+          badgeColor: "cyan",
+          ejercicios: [
+            {
+              id: "f2_e1",
+              nombre: "Extensión Torácica Aislada Avanzada",
+              tipo: "reps",
+              series: 3,
+              reps: 12,
+              sostenimientoSeg: 4,
+              descansoSeg: 30,
+              rpe: "5-6",
+              foco: "Incremento de extensión torácica activa.",
+              instrucciones: "Mayor extensión dorsal controlada con pausa isométrica estricta de 4s en cada repetición.",
+              svgIcon: "thoracic"
+            },
+            {
+              id: "f2_e2",
+              nombre: "Postura Souchard Avanzada (Rana en Suelo)",
+              tipo: "tiempo",
+              duracionSeg: 300, // 5 min
+              series: 1,
+              descansoSeg: 60,
+              rpe: "4-5",
+              foco: "Apertura angular progresiva de extremidades inferiores y superiores.",
+              instrucciones: "Sostén 5 minutos continuos con respiración diafragmática profunda sin perder la alineación fascial.",
+              svgIcon: "frog"
+            },
+            {
+              id: "f2_e3",
+              nombre: "Levantamiento Activo de Cabeza (Head Lift Chin Tuck)",
+              tipo: "reps",
+              series: 3,
+              reps: 10,
+              sostenimientoSeg: 5,
+              descansoSeg: 45,
+              rpe: "6-7",
+              foco: "Evolución contra la gravedad de los flexores cervicales profundos.",
+              instrucciones: "En supino, realiza doble mentón y eleva la cabeza SOLO 1 cm del suelo reteniendo la gravedad sin activar en exceso el ECM.",
+              svgIcon: "headlift"
+            },
+            {
+              id: "f2_e4",
+              nombre: "Face Pulls con Banda Elástica (Rotación Externa)",
+              tipo: "reps",
+              series: 3,
+              reps: 12,
+              sostenimientoSeg: 4, // TUT 4s
+              descansoSeg: 60,
+              rpe: "7-8",
+              foco: "Rotadores externos de hombro y retractores escapulares con TUT de 4s.",
+              instrucciones: "Tracciona la banda hacia el rostro separando codos y rotando externamente los hombros. Sostén 4s en pico.",
+              svgIcon: "bandpull"
+            },
+            {
+              id: "f2_e5",
+              nombre: "Wall Angels / Pausa Isométrica 4s (TUT)",
+              tipo: "reps",
+              series: 3,
+              reps: 10,
+              sostenimientoSeg: 4,
+              descansoSeg: 60,
+              rpe: "7-8",
+              foco: "Tiempo Bajo Tensión (TUT) aumentado a 4s en contracción.",
+              instrucciones: "Desliza en la pared manteniendo tensión isométrica máxima de 4s arriba en cada repetición.",
+              svgIcon: "wallangel"
+            },
+            {
+              id: "f2_e6",
+              nombre: "Postura de Bruegger con Resistencia Isométrica",
+              tipo: "tiempo",
+              duracionSeg: 60,
+              series: 1,
+              descansoSeg: 0,
+              rpe: "6-7",
+              foco: "Integración isométrica de postura erguida de 60s.",
+              instrucciones: "Mantén apertura torácica máxima y retracción escapular activa continua durante 60 segundos.",
+              svgIcon: "bruegger"
+            }
+          ]
+        },
+        {
+          id: "fase3",
+          nombre: "FASE 3: Integración Funcional en Cadenas Cinéticas",
+          semanas: "Semanas 9 a 12",
+          frecuencia: "3 a 4 días/semana",
+          duracion: "20-25 minutos",
+          enfoque: "Consolidación postural y mantenimiento frente a la gravedad en bipedestación.",
+          badgeColor: "teal",
+          ejercicios: [
+            {
+              id: "f3_e1",
+              nombre: "Extensión Torácica Dinámica de Pie",
+              tipo: "reps",
+              series: 3,
+              reps: 12,
+              sostenimientoSeg: 4,
+              descansoSeg: 30,
+              rpe: "5-6",
+              foco: "Extensión dorsal integrando movimiento pélvico de pie.",
+              instrucciones: "De pie, arqueo torácico controlado manteniendo pelvis neutra y barbilla retraída.",
+              svgIcon: "thoracic"
+            },
+            {
+              id: "f3_e2",
+              nombre: "Souchard de Pie contra Pared (Apertura Coxofemoral)",
+              tipo: "tiempo",
+              duracionSeg: 240, // 4 mins
+              series: 1,
+              descansoSeg: 60,
+              rpe: "5-6",
+              foco: "Evolución a postura erguida: alineación nuca, tórax y sacro.",
+              instrucciones: "De pie contra la pared, apoya nuca, zona torácica y sacro. Abre el ángulo coxofemoral y mantiene brazos abiertos.",
+              svgIcon: "wallsouchard"
+            },
+            {
+              id: "f3_e3",
+              nombre: "Chin Tucks de Pie con Carga Isométrica",
+              tipo: "reps",
+              series: 3,
+              reps: 12,
+              sostenimientoSeg: 5,
+              descansoSeg: 45,
+              rpe: "6-7",
+              foco: "Consolidación de postura cervical neutra funcional de pie.",
+              instrucciones: "Retracción de barbilla manteniendo columna totalmente erguida y alineación neutra contra la gravedad.",
+              svgIcon: "chintuck"
+            },
+            {
+              id: "f3_e4",
+              nombre: "Y-Raises en Prono sobre Fitball (Balón de Estabilidad)",
+              tipo: "reps",
+              series: 3,
+              reps: 12,
+              sostenimientoSeg: 4,
+              descansoSeg: 60,
+              rpe: "8-9",
+              foco: "Reto inestable del core y estabilizadores escapulares sobre Fitball.",
+              instrucciones: "Apoya el abdomen sobre el Fitball con los pies firmes. Eleva brazos en 'Y' sosteniendo 4 segundos en la cima.",
+              svgIcon: "fitbally"
+            },
+            {
+              id: "f3_e5",
+              nombre: "Wall Angels Funcionales de Pie",
+              tipo: "reps",
+              series: 3,
+              reps: 10,
+              sostenimientoSeg: 4,
+              descansoSeg: 60,
+              rpe: "7-8",
+              foco: "Coordinación completa de la cadena posterior de pie.",
+              instrucciones: "Ejecuta Wall Angels asegurando alineación completa de rodillas, pelvis, escápulas y cabeza.",
+              svgIcon: "wallangel"
+            },
+            {
+              id: "f3_e6",
+              nombre: "Postura de Bruegger Funcional de Pie",
+              tipo: "tiempo",
+              duracionSeg: 60,
+              series: 1,
+              descansoSeg: 0,
+              rpe: "6",
+              foco: "Cierre de rutina y transferencia a la postura cotidiana.",
+              instrucciones: "Mantén 60s la alineación óptima descompresiva respirando profundo.",
+              svgIcon: "bruegger"
+            }
+          ]
+        }
+      ],
+      oficinaRegla3030: {
+        intervaloMinutos: 30,
+        duracionPausaSegundos: 30,
+        habitos: [
+          {
+            id: "hab1",
+            nombre: "Chin Tucks Sentados",
+            descripcion: "5 a 10 repeticiones con sostenimiento de 3 segundos.",
+            instruccion: "Sentado erguido con los pies apoyados, lleva la barbilla hacia atrás haciendo doble mentón sin inclinar la cabeza hacia abajo. Mantén 3 segundos y repite.",
+            svgIcon: "chintuck"
+          },
+          {
+            id: "hab2",
+            nombre: "Expansión Torácica de Bruegger Modificada",
+            descripcion: "3 respiraciones diafragmáticas lentas con rotación externa.",
+            instruccion: "Al borde de la silla, abre las piernas, rota los hombros hacia afuera exponiendo las palmas al frente. Inhala profundo inflando el abdomen y exhala lento.",
+            svgIcon: "bruegger"
+          },
+          {
+            id: "hab3",
+            nombre: "Estiramiento en Marco de Puerta",
+            descripcion: "Estiramiento del pectoral, 20 segundos por lado.",
+            instruccion: "Apoya el antebrazo en el marco de la puerta a 90°. Da un paso al frente hasta sentir el estiramiento en el pectoral. Sostén 20 segundos y cambia de lado.",
+            svgIcon: "doorstretch"
+          }
+        ]
+      }
+    };
+
+
+    /* ===================================================================
+       2. REPERTORIO DE ICONOS SVG VECTORIALES
+    =================================================================== */
+    const SVG_ICONS = {
+      thoracic: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M8 6h8M7 11h10M8 16h8" stroke-linecap="round"/></svg>`,
+      frog: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M5 20l4-6 3 2 3-2 4 6M7 11h10" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      chintuck: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="3"/><path d="M12 10v4M8 14h8M10 18h4" stroke-linecap="round"/></svg>`,
+      yraise: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l6 8 6-8M12 12v9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      wallangel: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M4 9l4 4v7M20 9l-4 4v7M12 7v13" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      bruegger: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M5 12h14M12 7v14" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      headlift: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18h18M6 14l6-3 6 3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="8" r="2.5"/></svg>`,
+      bandpull: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M7 8l-3 4 3 4M17 8l3 4-3 4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      wallsouchard: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 3v18M5 12h10" stroke-linecap="round"/><circle cx="12" cy="6" r="2"/></svg>`,
+      fitbally: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="15" r="5"/><path d="M6 5l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      doorstretch: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M15 12h.01" stroke-linecap="round"/></svg>`
+    };
+
+
+    /* ===================================================================
+       3. SINTETIZADOR WEB AUDIO API & ALERTAS HÁPTICAS
+    =================================================================== */
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Tono sinusoidal sintetizado de alta potencia
+    function playBeepTone(freq = 880, duration = 0.25, type = 'sine') {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+        gain.gain.setValueAtTime(0.7, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {
+        console.warn('Audio Context error:', e);
+      }
+    }
+
+    // Alarma fuerte (3 pulsos armónicos)
+    function playLoudAlarm() {
+      playBeepTone(880, 0.2);
+      setTimeout(() => playBeepTone(1174.66, 0.2), 220);
+      setTimeout(() => playBeepTone(1760, 0.4), 440);
+    }
+
+    // Vibración háptica en móvil
+    function triggerHapticVibration() {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([400, 150, 400, 150, 600]);
+      }
+    }
+
+    // Disparar alarma completa (Audio + Vibración)
+    function triggerFullAlert() {
+      playLoudAlarm();
+      triggerHapticVibration();
+    }
+
+    function testAlerts() {
+      triggerFullAlert();
+      alert('¡Alarma sonora y vibración probadas correctamente!');
+    }
+
+
+    /* ===================================================================
+       4. ESTADO DE LA APLICACIÓN & LÓGICA DEL TEMPORIZADOR
+    =================================================================== */
+    let currentPhaseIdx = 0;
+    let currentExIdx = 0;
+    let currentSetNum = 1;
+    let isRestMode = false;
+
+    let timerStatus = 'stopped'; // 'stopped', 'running', 'paused'
+    let timeRemaining = 0;
+    let totalTimerDuration = 0;
+    let timerInterval = null;
+
+    let completedExMap = {}; // Guarda estado completado { "fase0_ex0": true }
+
+    // Inicialización al cargar DOM
+    document.addEventListener('DOMContentLoaded', () => {
+      renderPhaseUI();
+      renderOfficeHabitsList();
+      renderGuiaCards();
+      setupPwaInstall();
+    });
+
+    // Cambiar de Pestaña Principal
+    function switchTab(tabName) {
+      const tabs = ['rutina', 'oficina', 'guia'];
+      tabs.forEach(t => {
+        const sec = document.getElementById('sec' + t.charAt(0).toUpperCase() + t.slice(1));
+        const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === tabName) {
+          sec.classList.remove('hidden');
+          btn.classList.add('border-brand-mint', 'text-brand-mint');
+          btn.classList.remove('border-transparent', 'text-slate-400');
+        } else {
+          sec.classList.add('hidden');
+          btn.classList.remove('border-brand-mint', 'text-brand-mint');
+          btn.classList.add('border-transparent', 'text-slate-400');
+        }
+      });
+    }
+
+    // Cambiar de Fase de Entrenamiento
+    function changePhase(phaseIdx) {
+      currentPhaseIdx = phaseIdx;
+      currentExIdx = 0;
+      currentSetNum = 1;
+      isRestMode = false;
+      stopTimer();
+      renderPhaseUI();
+    }
+
+    // Renderizar la interfaz según RUTINA_CONFIG
+    function renderPhaseUI() {
+      const phase = RUTINA_CONFIG.fases[currentPhaseIdx];
+      
+      // Actualizar cabecera de fase
+      document.getElementById('phaseTitle').textContent = phase.nombre;
+      document.getElementById('phaseEnfoque').textContent = phase.enfoque;
+      document.getElementById('phaseWeeks').textContent = phase.semanas;
+      document.getElementById('phaseFreq').textContent = phase.frecuencia;
+      document.getElementById('phaseDur').textContent = phase.duracion;
+      document.getElementById('phaseTotalEx').textContent = phase.ejercicios.length + ' Ejercicios';
+
+      // Estilos botones de fase
+      for (let i = 0; i < 3; i++) {
+        const btn = document.getElementById(`btnFase${i}`);
+        if (i === currentPhaseIdx) {
+          btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-brand-mint text-brand-dark shadow transition";
+        } else {
+          btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition";
+        }
+      }
+
+      // Renderizar tarjetas de ejercicios (Panel derecho)
+      renderExerciseCards();
+
+      // Cargar ejercicio activo en el temporizador
+      loadActiveExercise();
+    }
+
+    // Renderizar tarjetas en el panel derecho
+    function renderExerciseCards() {
+      const container = document.getElementById('exerciseCardsContainer');
+      const exercises = RUTINA_CONFIG.fases[currentPhaseIdx].ejercicios;
+      
+      let completedCount = 0;
+      container.innerHTML = exercises.map((ex, idx) => {
+        const key = `f${currentPhaseIdx}_e${idx}`;
+        const isDone = !!completedExMap[key];
+        if (isDone) completedCount++;
+
+        const isActive = idx === currentExIdx;
+        const borderClass = isActive ? 'border-brand-mint ring-1 ring-brand-mint/50 bg-slate-900/90' : 'border-brand-border/60 bg-brand-card hover:border-slate-600';
+
+        return `
+          <div onclick="selectExercise(${idx})" class="p-3.5 rounded-xl border ${borderClass} cursor-pointer transition flex items-center justify-between gap-3 shadow-md">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-lg bg-slate-800 p-2 flex items-center justify-center text-brand-mint shrink-0 border border-slate-700">
+                ${SVG_ICONS[ex.svgIcon] || SVG_ICONS.thoracic}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">#${idx + 1}</span>
+                  <h4 class="text-xs font-bold text-white truncate">${ex.nombre}</h4>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate mt-0.5">${ex.tipo === 'tiempo' ? (ex.duracionSeg / 60) + ' min continuos' : ex.series + ' series x ' + ex.reps + ' reps'}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-[10px] font-semibold text-slate-400 bg-slate-900 px-2 py-1 rounded border border-slate-800">RPE ${ex.rpe}</span>
+              ${isDone ? `
+                <div class="w-6 h-6 rounded-full bg-brand-mint/20 text-brand-mint flex items-center justify-center border border-brand-mint/40">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </div>
+              ` : `
+                <div class="w-6 h-6 rounded-full bg-slate-800 text-slate-600 flex items-center justify-center border border-slate-700">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('exProgressCount').textContent = `${completedCount} / ${exercises.length} completados`;
+    }
+
+    // Seleccionar ejercicio directamente de la lista
+    function selectExercise(idx) {
+      stopTimer();
+      currentExIdx = idx;
+      currentSetNum = 1;
+      isRestMode = false;
+      renderExerciseCards();
+      loadActiveExercise();
+    }
+
+    // Cargar datos del ejercicio activo en la pantalla principal
+    function loadActiveExercise() {
+      const ex = RUTINA_CONFIG.fases[currentPhaseIdx].ejercicios[currentExIdx];
+      const totalEx = RUTINA_CONFIG.fases[currentPhaseIdx].ejercicios.length;
+
+      document.getElementById('exStepBadge').textContent = `Ejercicio ${currentExIdx + 1} de ${totalEx}`;
+      document.getElementById('exActiveName').textContent = ex.nombre;
+      document.getElementById('exActiveFocus').textContent = ex.foco;
+      document.getElementById('exActiveIcon').innerHTML = SVG_ICONS[ex.svgIcon] || SVG_ICONS.thoracic;
+
+      document.getElementById('exDetailSeries').textContent = ex.series;
+      document.getElementById('exDetailRpe').textContent = ex.rpe;
+
+      document.getElementById('timerInstructionBox').textContent = ex.instrucciones;
+
+      const btnCompleteSet = document.getElementById('btnCompleteSet');
+
+      if (ex.tipo === 'tiempo') {
+        document.getElementById('exTypeBadge').textContent = 'Por Tiempo';
+        document.getElementById('exDetailTarget').textContent = Math.round(ex.duracionSeg / 60) + ' min sostenidos';
+        btnCompleteSet.classList.add('hidden');
+        
+        totalTimerDuration = ex.duracionSeg;
+        timeRemaining = ex.duracionSeg;
+        updateTimerDisplay('Tiempo Restante', timeRemaining, totalTimerDuration);
+      } else {
+        document.getElementById('exTypeBadge').textContent = 'Por Repeticiones';
+        document.getElementById('exDetailTarget').textContent = `${ex.reps} reps (${ex.sostenimientoSeg || 2}s)`;
+        btnCompleteSet.classList.remove('hidden');
+        updateSetButtonText();
+
+        // En reps, el temporizador por defecto muestra el tiempo de descanso inter-serie
+        totalTimerDuration = ex.descansoSeg;
+        timeRemaining = ex.descansoSeg;
+        updateTimerDisplay(`Serie ${currentSetNum} de ${ex.series}`, timeRemaining, totalTimerDuration);
+      }
+    }
+
+    function updateSetButtonText() {
+      const ex = RUTINA_CONFIG.fases[currentPhaseIdx].ejercicios[currentExIdx];
+      document.getElementById('txtCompleteSet').textContent = isRestMode 
+        ? 'SALTAR DESCANSO' 
+        : `COMPLETAR SERIE ${currentSetNum} DE ${ex.series}`;
+    }
+
+    // Actualizar visual del reloj (Números + Anillo SVG)
+    function updateTimerDisplay(label, seconds, totalSeconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      document.getElementById('timerTimeDisplay').textContent = 
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      
+      document.getElementById('timerSubDisplay').textContent = label;
+
+      // Anillo SVG (Circunferencia = 2 * PI * 42 = 263.89)
+      const ring = document.getElementById('timerProgressRing');
+      const circumference = 263.89;
+      const progress = totalSeconds > 0 ? (seconds / totalSeconds) : 0;
+      const offset = circumference - (progress * circumference);
+      ring.style.strokeDashoffset = offset;
+
+      if (isRestMode) {
+        ring.classList.remove('text-brand-mint');
+        ring.classList.add('text-brand-cyan');
+      } else {
+        ring.classList.remove('text-brand-cyan');
+        ring.classList.add('text-brand-mint');
+      }
+    }
+
+
+    /* ===================================================================
+       CONTROLES DEL TEMPORIZADOR INTELIGENTE
+    =================================================================== */
+    function toggleTimer() {
+      if (timerStatus === 'running') {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    }
+
+    function startTimer() {
+      getAudioContext(); // Resumen del AudioContext
+      timerStatus = 'running';
+      document.getElementById('iconPlay').classList.add('hidden');
+      document.getElementById('iconPause').classList.remove('hidden');
+      document.getElementById('txtPlayPause').textContent = 'PAUSAR';
+
+      if (timerInterval) clearInterval(timerInterval);
+
+      timerInterval = setInterval(() => {
+        if (timeRemaining > 0) {
+          timeRemaining--;
+          const ex = RUTINA_CONFIG.fases[currentPhaseIdx].ejercicios[currentExIdx];
+          const label = isRestMode ? `DESCANSO INTER-SERIE` : (ex.tipo === 'tiempo' ? 'Tiempo Restante' : `Serie ${currentSetNum} de ${ex.series}`);
+          updateTimerDisplay(label, timeRemaining, totalTimerDuration);
+        } else {
+          // FIN DEL TIEMPO Restante
+          onTimerFinished();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      timerStatus = 'paused';
+      document.getElementById('iconPlay').classList.remove('hidden');
+      document.getElementById('iconPause').classList.add('hidden');
+      document.getElementById('txtPlayPause').textContent = 'REANUDAR';
+      if (timerInterval) clearInterval(timerInterval);
+    }
+
+    function stopTimer() {
+      timerStatus = 'stopped';
+      document.getElementById('iconPlay').classList.remove('hidden');
+      document.getElementById('iconPause').classList.add('hidden');
+      document.getElementById('txtPlayPause').textContent = 'INICIAR';
+      if (timerInterval) clearInterval(timerInterval);
+    }
+
+    function resetTimer() {
+      stopTimer();
+      isRestMode = false;
+      loadActiveExercise();
+    }
+
+    // Evento al finalizar la cuenta regresiva
+    function onTimerFinished() {
+      stopTimer();
+      triggerFullAlert();
+
+      const ex = RUTINA_CONFIG.fases[currentPhaseIdx].ejercicios[currentExIdx];
+
+      if (ex.tipo === 'tiempo') {
+        // Marcamos completado y avanzamos
+        completedExMap[`f${currentPhaseIdx}_e${currentExIdx}`] = true;
+        renderExerciseCards();
+        alert(`¡Excelente! Has completado ${ex.nombre}.`);
+        nextExercise();
+      } else {
+        // En ejercicio por reps
+        if (isRestMode) {
+          // El descanso terminó -> Pasar a la siguiente serie
+          isRestMode = false;
+          if (currentSetNum < ex.series) {
+            currentSetNum++;
+          }
+          loadActiveExercise();
+          startTimer(); // Auto iniciar siguiente serie
+        } else {
+          // Completó tiempo de serie
+          handleSetCompletion();
+        }
+      }
+    }
+
+    // Manejar finalización de serie manual
+    function handleSetCompletion() {
+      const ex = RUTINA_CONFIG.fases[currentPhaseIdx].ejercicios[currentExIdx];
+
+      if (isRestMode) {
+        // Saltar descanso
+        stopTimer();
+        isRestMode = false;
+        if (currentSetNum < ex.series) {
+          currentSetNum++;
+        } else {
+          // Última serie hecha
+          completedExMap[`f${currentPhaseIdx}_e${currentExIdx}`] = true;
+          renderExerciseCards();
+          nextExercise();
+          return;
+        }
+        loadActiveExercise();
+        return;
+      }
+
+      // Si no estaba en descanso: registrar serie completada
+      triggerHapticVibration();
+      playBeepTone(1174.66, 0.15);
+
+      if (currentSetNum < ex.series) {
+        // Iniciar Descanso Inter-serie
+        isRestMode = true;
+        totalTimerDuration = ex.descansoSeg;
+        timeRemaining = ex.descansoSeg;
+        updateSetButtonText();
+        startTimer();
+      } else {
+        // Serie final completada
+        completedExMap[`f${currentPhaseIdx}_e${currentExIdx}`] = true;
+        renderExerciseCards();
+        triggerFullAlert();
+        alert(`¡Ejercicio completado! (${ex.series} series hechas)`);
+        nextExercise();
+      }
+    }
+
+    function prevExercise() {
+      if (currentExIdx > 0) {
+        selectExercise(currentExIdx - 1);
+      }
+    }
+
+    function nextExercise() {
+      const totalEx = RUTINA_CONFIG.fases[currentPhaseIdx].ejercicios.length;
+      if (currentExIdx < totalEx - 1) {
+        selectExercise(currentExIdx + 1);
+      } else {
+        alert('¡Enhorabuena! Has llegado al final de la rutina de esta fase.');
+      }
+    }
+
+
+    /* ===================================================================
+       5. MÓDULO INDEPENDIENTE DE OFICINA (REGLA 30/30)
+    =================================================================== */
+    let officeActive = false;
+    let officeInterval = null;
+    let officeTimeRemaining = 30 * 60; // 30 mins
+    let currentOfficeHabitIdx = 0;
+
+    let modal30sInterval = null;
+    let modal30sRemaining = 30;
+
+    function toggleOfficeMode() {
+      const chk = document.getElementById('toggleOfficeMode');
+      officeActive = chk.checked;
+      
+      const label = document.getElementById('officeStatusLabel');
+      const badge = document.getElementById('badgeOficinaStatus');
+
+      if (officeActive) {
+        label.textContent = 'ACTIVO (CADA 30 MIN)';
+        label.className = 'text-xs font-bold text-brand-mint mt-2';
+        badge.className = 'w-2 h-2 rounded-full bg-brand-mint animate-ping';
+        getAudioContext();
+        startOfficeTimer();
+      } else {
+        label.textContent = 'DESACTIVADO';
+        label.className = 'text-xs font-bold text-slate-400 mt-2';
+        badge.className = 'w-2 h-2 rounded-full bg-slate-500';
+        stopOfficeTimer();
+      }
+    }
+
+    function startOfficeTimer() {
+      if (officeInterval) clearInterval(officeInterval);
+      
+      officeInterval = setInterval(() => {
+        if (!officeActive) return;
+
+        if (officeTimeRemaining > 0) {
+          officeTimeRemaining--;
+          updateOfficeDisplay();
+        } else {
+          // DISPARAR PAUSA
+          triggerOfficeBreakNow();
+        }
+      }, 1000);
+    }
+
+    function stopOfficeTimer() {
+      if (officeInterval) clearInterval(officeInterval);
+    }
+
+    function updateOfficeDisplay() {
+      const mins = Math.floor(officeTimeRemaining / 60);
+      const secs = officeTimeRemaining % 60;
+      document.getElementById('officeCountdownDisplay').textContent = 
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      const habit = RUTINA_CONFIG.oficinaRegla3030.habitos[currentOfficeHabitIdx];
+      document.getElementById('officeNextHabitName').textContent = `Siguiente: ${habit.nombre}`;
+    }
+
+    function triggerOfficeBreakNow() {
+      triggerFullAlert();
+
+      // Reiniciar contador de 30 mins para el siguiente ciclo
+      officeTimeRemaining = 30 * 60;
+      updateOfficeDisplay();
+
+      // Abrir modal de hábito
+      const habit = RUTINA_CONFIG.oficinaRegla3030.habitos[currentOfficeHabitIdx];
+      document.getElementById('modalHabitTitle').textContent = habit.nombre;
+      document.getElementById('modalHabitDesc').textContent = habit.descripcion;
+      document.getElementById('modalHabitInstruccion').textContent = habit.instruccion;
+      document.getElementById('modalHabitIcon').innerHTML = SVG_ICONS[habit.svgIcon] || SVG_ICONS.chintuck;
+
+      const modal = document.getElementById('officeBreakModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      // Cronómetro de 30s dentro del modal
+      modal30sRemaining = 30;
+      document.getElementById('modal30sTimer').textContent = '00:30';
+
+      if (modal30sInterval) clearInterval(modal30sInterval);
+      modal30sInterval = setInterval(() => {
+        if (modal30sRemaining > 0) {
+          modal30sRemaining--;
+          document.getElementById('modal30sTimer').textContent = 
+            `00:${String(modal30sRemaining).padStart(2, '0')}`;
+        } else {
+          clearInterval(modal30sInterval);
+          playBeepTone(1760, 0.3);
+        }
+      }, 1000);
+    }
+
+    function closeOfficeBreakModal() {
+      if (modal30sInterval) clearInterval(modal30sInterval);
+      const modal = document.getElementById('officeBreakModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+
+      // Avanzar al siguiente hábito en ciclo
+      currentOfficeHabitIdx = (currentOfficeHabitIdx + 1) % RUTINA_CONFIG.oficinaRegla3030.habitos.length;
+      updateOfficeDisplay();
+    }
+
+    function renderOfficeHabitsList() {
+      const container = document.getElementById('officeHabitsList');
+      container.innerHTML = RUTINA_CONFIG.oficinaRegla3030.habitos.map((h, i) => `
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 flex items-start gap-3">
+          <div class="w-10 h-10 rounded-lg bg-brand-cyan/10 border border-brand-cyan/20 p-2 text-brand-cyan shrink-0">
+            ${SVG_ICONS[h.svgIcon] || SVG_ICONS.chintuck}
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-cyan/20 text-brand-cyan">Hábito ${i + 1}</span>
+              <h4 class="text-sm font-bold text-white">${h.nombre}</h4>
+            </div>
+            <p class="text-xs text-slate-300 mt-1">${h.instruccion}</p>
+          </div>
+        </div>
+      `).join('');
+
+      updateOfficeDisplay();
+    }
+
+
+    /* ===================================================================
+       6. RENDIMIENTO GUÍA TÉCNICA
+    =================================================================== */
+    function renderGuiaCards() {
+      const container = document.getElementById('guiaFullCards');
+      let allEx = [];
+      RUTINA_CONFIG.fases.forEach(f => {
+        f.ejercicios.forEach(e => {
+          if (!allEx.find(x => x.nombre === e.nombre)) {
+            allEx.push({ ...e, faseNombre: f.nombre });
+          }
+        });
+      });
+
+      container.innerHTML = allEx.map(e => `
+        <div class="bg-brand-card rounded-2xl p-5 border border-brand-border shadow-md space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-800 p-2 text-brand-mint border border-slate-700 shrink-0">
+              ${SVG_ICONS[e.svgIcon] || SVG_ICONS.thoracic}
+            </div>
+            <div>
+              <span class="text-[10px] font-semibold text-brand-cyan uppercase">${e.faseNombre}</span>
+              <h4 class="text-base font-bold text-white">${e.nombre}</h4>
+            </div>
+          </div>
+          <div class="text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+            <strong class="text-brand-mint block mb-1">Foco Biomecánico:</strong>
+            <p class="mb-2">${e.foco}</p>
+            <strong class="text-brand-mint block mb-1">Ejecución Técnica:</strong>
+            <p>${e.instrucciones}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+
+    /* ===================================================================
+       7. REGISTRO SERVICE WORKER Y PWA INSTALL PROMPT
+    =================================================================== */
+    let deferredPrompt = null;
+
+    function setupPwaInstall() {
+      // Registrar Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('ServiceWorker registrado:', reg.scope))
+            .catch(err => console.warn('Error registrando ServiceWorker:', err));
+        });
+      }
+
+      // Capturar prompt de instalación PWA
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const btn = document.getElementById('btnPwaInstall');
+        btn.classList.remove('hidden');
+
+        btn.addEventListener('click', () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choice) => {
+              if (choice.outcome === 'accepted') {
+                console.log('Usuario instaló la PWA');
+              }
+              deferredPrompt = null;
+              btn.classList.add('hidden');
+            });
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html>
