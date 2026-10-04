@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Rutina Postural 10 Min - PosturaFit</title>
+  
+  <!-- Configuración PWA y soporte móvil -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f172a'/><path d='M50 15 C30 15 25 35 25 50 C25 65 30 85 50 85 C70 85 75 65 75 50 C75 35 70 15 50 15 Z' stroke='%2310b981' stroke-width='6' fill='none'/><circle cx='50' cy='30' r='6' fill='%2306b6d4'/><path d='M40 50 L60 50 M50 40 L50 70' stroke='%2310b981' stroke-width='5' stroke-linecap='round'/></svg>">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#0b1120',
+              card: '#1e293b',
+              border: '#334155',
+              mint: '#10b981',
+              mintHover: '#059669',
+              cyan: '#06b6d4',
+              rest: '#38bdf8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.02); opacity: 0.95; }
+    }
+    .pulse-active {
+      animation: pulseSoft 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-brand-dark text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-brand-mint selection:text-brand-dark">
+
+  <!-- ==========================================
+       HEADER MINIMALISTA
+  ========================================== -->
+  <header class="border-b border-slate-800 bg-brand-dark/90 backdrop-blur px-4 py-3 sticky top-0 z-30">
+    <div class="max-w-xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-brand-mint text-brand-dark flex items-center justify-center font-black text-sm">
+          10'
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-white leading-tight">Rutina Postural Diaria</h1>
+          <p class="text-[11px] text-brand-mint font-medium">10 minutos exactos al día</p>
+        </div>
+      </div>
+
+      <!-- BOTÓN PROBAR SONIDO -->
+      <button onclick="testAudio()" title="Probar sonido de alarma" class="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+        <svg class="w-3.5 h-3.5 text-brand-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+        </svg>
+        <span class="hidden sm:inline">Sonido</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================
+       CONTENIDO PRINCIPAL
+  ========================================== -->
+  <main class="flex-1 max-w-xl w-full mx-auto p-4 flex flex-col justify-between gap-5">
+
+    <!-- SELECTOR DE FASE SIMPLE -->
+    <div class="bg-slate-900/90 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-1">
+      <button onclick="setPhase(0)" id="btnPhase0" class="flex-1 py-2 text-xs font-bold rounded-xl transition bg-brand-mint text-brand-dark shadow">
+        Fase 1 (S1-4)
+      </button>
+      <button onclick="setPhase(1)" id="btnPhase1" class="flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white">
+        Fase 2 (S5-8)
+      </button>
+      <button onclick="setPhase(2)" id="btnPhase2" class="flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white">
+        Fase 3 (S9-12)
+      </button>
+    </div>
+
+    <!-- TARJETA DEL TEMPORIZADOR Y EJERCICIO ACTIVO -->
+    <div id="workoutCard" class="bg-brand-card border border-slate-700/80 rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col items-center text-center">
+      
+      <!-- INDICADOR ESTADO / DESCANSO -->
+      <div id="statusBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-brand-mint/15 text-brand-mint border border-brand-mint/30 mb-3 uppercase tracking-wider">
+        Ejercicio 1 de 5
+      </div>
+
+      <!-- NOMBRE DEL EJERCICIO -->
+      <h2 id="exName" class="text-2xl font-black text-white leading-tight min-h-[3.5rem] flex items-center justify-center">
+        Extensión Torácica en Suelo
+      </h2>
+
+      <!-- DETALLES BREVES -->
+      <div id="exSubdetails" class="text-xs text-brand-cyan font-semibold mt-1">
+        10 repeticiones controladas (pausa 3-4s)
+      </div>
+
+      <!-- INSTRUCCIÓN CLAVE Y DIRECTA (1 LÍNEA) -->
+      <p id="exGuide" class="text-xs text-slate-300 bg-slate-900/80 border border-slate-800/80 rounded-xl px-4 py-2.5 my-4 max-w-md leading-relaxed">
+        Boca abajo o cuadrúpeda. Arquea solo la parte media y alta de la espalda sin forzar la cintura.
+      </p>
+
+      <!-- RELOJ CENTRAL CIRCULAR -->
+      <div class="relative w-52 h-52 my-2 flex items-center justify-center">
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" stroke="currentColor" stroke-width="7" class="text-slate-800" fill="transparent"/>
+          <circle id="timerRing" cx="50" cy="50" r="42" stroke="currentColor" stroke-width="7" class="text-brand-mint transition-all duration-200" stroke-dasharray="263.89" stroke-dashoffset="0" stroke-linecap="round" fill="transparent"/>
+        </svg>
+
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span id="timerDigits" class="text-5xl font-black font-mono text-white tracking-tight">
+            01:30
+          </span>
+          <span id="timerLabel" class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+            Restante
+          </span>
+        </div>
+      </div>
+
+      <!-- BOTONES DE ACCIÓN PRINCIPALES -->
+      <div class="w-full flex items-center gap-3 mt-4">
+        <!-- BOTÓN PLAY / PAUSA GIGANTE -->
+        <button id="btnMainPlay" onclick="togglePlayPause()" class="flex-1 py-4 bg-brand-mint hover:bg-brand-mintHover text-brand-dark font-black text-base rounded-2xl shadow-lg shadow-brand-mint/25 transition active:scale-[0.98] flex items-center justify-center gap-2">
+          <svg id="svgPlay" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="svgPause" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          <span id="txtMainPlay">EMPEZAR RUTINA</span>
+        </button>
+
+        <!-- BOTÓN SIGUIENTE EJERCICIO -->
+        <button onclick="skipNext()" title="Saltar al siguiente" class="p-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl border border-slate-700 transition active:scale-95">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- BARRA DE PROGRESO TOTAL DE 10 MINUTOS -->
+      <div class="w-full mt-5 pt-3 border-t border-slate-800/80">
+        <div class="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1.5">
+          <span>Progreso total diario</span>
+          <span id="totalProgressText" class="text-brand-mint">0:00 / 10:00</span>
+        </div>
+        <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div id="totalProgressBar" class="h-full bg-gradient-to-r from-brand-mint to-brand-cyan w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LISTA RÁPIDA DE LOS 5 EJERCICIOS (PARA SABER QUÉ VIENE) -->
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+      <div class="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+        <span>Secuencia de 10 Minutos</span>
+        <span class="text-brand-mint text-[11px]">5 pasos esenciales</span>
+      </div>
+      <div id="miniSequence" class="space-y-1.5 text-xs">
+        <!-- Render dinámico -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==========================================
+       MODAL DE FELICITACIONES (FIN DE RUTINA)
+  ========================================== -->
+  <div id="modalDone" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-brand-card border-2 border-brand-mint rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+      <div class="w-16 h-16 rounded-full bg-brand-mint/20 text-brand-mint border border-brand-mint/40 mx-auto flex items-center justify-center text-3xl">
+        🎉
+      </div>
+      <h3 class="text-2xl font-black text-white">¡10 Minutos Listos!</h3>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Has completado tu dosis diaria de reeducación postural. La constancia de 10 minutos al día es lo que transforma tu postura a largo plazo.
+      </p>
+      <button onclick="closeModalDone()" class="w-full py-3 bg-brand-mint text-brand-dark font-black text-sm rounded-xl transition hover:bg-brand-mintHover">
+        LISTO POR HOY
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ==========================================
+       LÓGICA JAVASCRIPT DE 10 MINUTOS
+  ========================================== -->
+  <script>
+    /* ===================================================================
+       CONFIGURACIÓN DE LA RUTINA: 10 MINUTOS EXACTOS (600 SEGUNDOS)
+    =================================================================== */
+    const RUTINA_10MIN = [
+      // FASE 1
+      {
+        fase: 1,
+        nombre: "Fase 1: Reeducación y Supresión de Tensión",
+        semanas: "Semanas 1 a 4",
+        ejercicios: [
+          {
+            nombre: "Extensión Torácica en Suelo",
+            subdetail: "10 repeticiones con pausa de 3s",
+            guia: "Tumbado o en cuatro apoyos. Extiende la espalda alta abriendo el pecho, sin arquear la zona lumbar.",
+            duracionTrabajo: 80, // 1m 20s
+            duracionDescanso: 20 // 20s descanso
+          },
+          {
+            nombre: "Chin Tucks (Doble Mentón en Suelo)",
+            subdetail: "10 repeticiones sosteniendo 5s",
+            guia: "Boca arriba en el suelo. Lleva la barbilla hacia atrás hacia la nuca (doble mentón) sin levantar la cabeza.",
+            duracionTrabajo: 90, // 1m 30s
+            duracionDescanso: 25 // 25s descanso
+          },
+          {
+            nombre: "Levantamientos en 'Y' (Y-Raises)",
+            subdetail: "2 series x 10 repeticiones",
+            guia: "Boca abajo con brazos en 'Y' (pulgares al techo). Eleva los brazos juntando escápulas.",
+            duracionTrabajo: 95, // 1m 35s
+            duracionDescanso: 25 // 25s descanso
+          },
+          {
+            nombre: "Deslizamientos en Pared (Wall Angels)",
+            subdetail: "8 a 10 repeticiones controladas",
+            guia: "Espalda apoyada en la pared. Desliza los brazos en 'W' hacia arriba manteniendo codos pegados.",
+            duracionTrabajo: 85, // 1m 25s
+            duracionDescanso: 20 // 20s descanso
+          },
+          {
+            nombre: "Postura de Descompresión (Rana/Bruegger)",
+            subdetail: "Postura sostenida con respiración diafragmática",
+            guia: "Relaja todo el cuerpo, abre brazos a 45° palmas arriba, respira profundo inflando el abdomen.",
+            duracionTrabajo: 80, // 1m 20s
+            duracionDescanso: 0  // Fin de rutina
+          }
+        ]
+      },
+      // FASE 2
+      {
+        fase: 2,
+        nombre: "Fase 2: Sobrecarga y Resistencia a la Fatiga",
+        semanas: "Semanas 5 a 8",
+        ejercicios: [
+          {
+            nombre: "Extensión Torácica Dinámica",
+            subdetail: "10 repeticiones con mayor rango",
+            guia: "Aumenta la elevación del pecho manteniendo cuello largo y hombros lejos de las orejas.",
+            duracionTrabajo: 80,
+            duracionDescanso: 20
+          },
+          {
+            nombre: "Head Lift + Chin Tuck (Levantamiento de Cabeza)",
+            subdetail: "8 repeticiones sosteniendo 5s",
+            guia: "En suelo supino: haz doble mentón y levanta la cabeza SOLO 1 cm del suelo retando la gravedad.",
+            duracionTrabajo: 90,
+            duracionDescanso: 25
+          },
+          {
+            nombre: "Face Pulls con Banda Elástica",
+            subdetail: "12 repeticiones (sostener 3s)",
+            guia: "Tracciona la banda hacia los ojos separando codos y rotando los antebrazos hacia atrás.",
+            duracionTrabajo: 95,
+            duracionDescanso: 25
+          },
+          {
+            nombre: "Wall Angels con Pausa Isométrica 4s",
+            subdetail: "8 repeticiones con tempo lento",
+            guia: "Mantén máxima tensión en la parte alta del movimiento durante 4 segundos completos.",
+            duracionTrabajo: 85,
+            duracionDescanso: 20
+          },
+          {
+            nombre: "Postura de Bruegger con Activación",
+            subdetail: "Isométrico final de 80s",
+            guia: "Hombros rotados afuera, palmas abiertas al frente, barbilla neutra y respiración controlada.",
+            duracionTrabajo: 80,
+            duracionDescanso: 0
+          }
+        ]
+      },
+      // FASE 3
+      {
+        fase: 3,
+        nombre: "Fase 3: Integración Funcional de Pie",
+        semanas: "Semanas 9 a 12",
+        ejercicios: [
+          {
+            nombre: "Extensión Torácica de Pie",
+            subdetail: "10 repeticiones de pie",
+            guia: "Extiende la caja torácica hacia el techo manteniendo la pelvis en posición neutra.",
+            duracionTrabajo: 80,
+            duracionDescanso: 20
+          },
+          {
+            nombre: "Chin Tucks de Pie contra Gravedad",
+            subdetail: "12 repeticiones controladas",
+            guia: "De pie erguido, retrae la barbilla creciendo hacia la coronilla como si te tiraran de un hilo.",
+            duracionTrabajo: 90,
+            duracionDescanso: 25
+          },
+          {
+            nombre: "Y-Raises sobre Fitball o Inclinado",
+            subdetail: "12 repeticiones con pausa",
+            guia: "Tronco inclinado hacia adelante. Eleva brazos en 'Y' activando la musculatura interescapular.",
+            duracionTrabajo: 95,
+            duracionDescanso: 25
+          },
+          {
+            nombre: "Wall Angels Funcionales Integrados",
+            subdetail: "10 repeticiones completas",
+            guia: "Alinea talones, sacro, espalda media y nuca contra la pared durante todo el recorrido.",
+            duracionTrabajo: 85,
+            duracionDescanso: 20
+          },
+          {
+            nombre: "Bruegger Funcional de Cierre",
+            subdetail: "Postura final de fijación neuromuscular",
+            guia: "Sostén la postura perfecta erguida respirando diafragmáticamente para grabar el patrón motor.",
+            duracionTrabajo: 80,
+            duracionDescanso: 0
+          }
+        ]
+      }
+    ];
+
+    /* ===================================================================
+       MOTOR DE AUDIO (WEB AUDIO API) Y VIBRACIÓN
+    =================================================================== */
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioClass();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playBeep(freq = 880, dur = 0.25) {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function alertExerciseEnd() {
+      // 3 beeps fuertes ascendentes
+      playBeep(784, 0.15); // Sol
+      setTimeout(() => playBeep(1046, 0.15), 180); // Do
+      setTimeout(() => playBeep(1318, 0.35), 360); // Mi
+      if ('vibrate' in navigator) {
+        navigator.vibrate([350, 150, 350, 150, 500]);
+      }
+    }
+
+    function alertRestEnd() {
+      // 2 beeps de inicio
+      playBeep(1174, 0.2);
+      setTimeout(() => playBeep(1400, 0.3), 220);
+      if ('vibrate' in navigator) {
+        navigator.vibrate([250, 100, 250]);
+      }
+    }
+
+    function testAudio() {
+      alertExerciseEnd();
+    }
+
+    /* ===================================================================
+       ESTADO DEL ENTRENAMIENTO
+    =================================================================== */
+    let selectedPhase = 0;
+    let exerciseIndex = 0;
+    let isResting = false;
+    let isRunning = false;
+    let timerSeconds = 0;
+    let totalExSeconds = 0;
+    let intervalId = null;
+
+    // Tiempo total acumulado transcurrido (sobre 600 segundos = 10 min)
+    let totalSecondsElapsed = 0;
+    const TOTAL_ROUTINE_SECONDS = 540; // 9 a 10 min totales reales
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadExercise();
+      renderMiniSequence();
+    });
+
+    function setPhase(idx) {
+      if (isRunning) togglePlayPause();
+      selectedPhase = idx;
+      exerciseIndex = 0;
+      isResting = false;
+      totalSecondsElapsed = 0;
+
+      // Actualizar botones de fase
+      [0, 1, 2].forEach(i => {
+        const btn = document.getElementById(`btnPhase${i}`);
+        if (i === idx) {
+          btn.className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-brand-mint text-brand-dark shadow";
+        } else {
+          btn.className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
+        }
+      });
+
+      loadExercise();
+      renderMiniSequence();
+    }
+
+    function getCurrentExercise() {
+      return RUTINA_10MIN[selectedPhase].ejercicios[exerciseIndex];
+    }
+
+    function loadExercise() {
+      const ex = getCurrentExercise();
+      const statusBadge = document.getElementById('statusBadge');
+      const timerRing = document.getElementById('timerRing');
+
+      if (!isResting) {
+        // Modo Trabajo
+        document.getElementById('exName').textContent = ex.nombre;
+        document.getElementById('exSubdetails').textContent = ex.subdetail;
+        document.getElementById('exGuide').textContent = ex.guia;
+        
+        statusBadge.textContent = `Paso ${exerciseIndex + 1} de 5: Ejercicio`;
+        statusBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-brand-mint/15 text-brand-mint border border-brand-mint/30 mb-3 uppercase tracking-wider";
+
+        timerRing.classList.remove('text-brand-rest');
+        timerRing.classList.add('text-brand-mint');
+
+        timerSeconds = ex.duracionTrabajo;
+        totalExSeconds = ex.duracionTrabajo;
+        document.getElementById('timerLabel').textContent = "TIEMPO ACTIVO";
+      } else {
+        // Modo Descanso
+        document.getElementById('exName').textContent = "Descanso y Preparación";
+        document.getElementById('exSubdetails').textContent = `Siguiente: ${RUTINA_10MIN[selectedPhase].ejercicios[exerciseIndex + 1].nombre}`;
+        document.getElementById('exGuide').textContent = "Relaja hombros, suelta los brazos y prepárate para la siguiente postura.";
+
+        statusBadge.textContent = `Descanso Inter-ejercicio`;
+        statusBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-brand-rest/20 text-brand-rest border border-brand-rest/40 mb-3 uppercase tracking-wider";
+
+        timerRing.classList.remove('text-brand-mint');
+        timerRing.classList.add('text-brand-rest');
+
+        timerSeconds = ex.duracionDescanso;
+        totalExSeconds = ex.duracionDescanso;
+        document.getElementById('timerLabel').textContent = "DESCANSO";
+      }
+
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      const mins = Math.floor(timerSeconds / 60);
+      const secs = timerSeconds % 60;
+      document.getElementById('timerDigits').textContent = 
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      // Anillo SVG (Circunferencia = 263.89)
+      const ring = document.getElementById('timerRing');
+      const progress = totalExSeconds > 0 ? (timerSeconds / totalExSeconds) : 0;
+      ring.style.strokeDashoffset = 263.89 - (progress * 263.89);
+
+      // Barra total de 10 min
+      const totalPercent = Math.min(100, Math.round((totalSecondsElapsed / TOTAL_ROUTINE_SECONDS) * 100));
+      document.getElementById('totalProgressBar').style.width = `${totalPercent}%`;
+
+      const elapsedMins = Math.floor(totalSecondsElapsed / 60);
+      const elapsedSecs = totalSecondsElapsed % 60;
+      document.getElementById('totalProgressText').textContent = 
+        `${elapsedMins}:${String(elapsedSecs).padStart(2, '0')} / 10:00`;
+    }
+
+    function togglePlayPause() {
+      getAudioCtx();
+      isRunning = !isRunning;
+
+      const svgPlay = document.getElementById('svgPlay');
+      const svgPause = document.getElementById('svgPause');
+      const txtBtn = document.getElementById('txtMainPlay');
+
+      if (isRunning) {
+        svgPlay.classList.add('hidden');
+        svgPause.classList.remove('hidden');
+        txtBtn.textContent = "PAUSAR";
+        
+        intervalId = setInterval(() => {
+          totalSecondsElapsed++;
+
+          if (timerSeconds > 0) {
+            timerSeconds--;
+            updateDisplay();
+          } else {
+            handleStepFinished();
+          }
+        }, 1000);
+      } else {
+        svgPlay.classList.remove('hidden');
+        svgPause.classList.add('hidden');
+        txtBtn.textContent = "REANUDAR";
+        if (intervalId) clearInterval(intervalId);
+      }
+    }
+
+    function handleStepFinished() {
+      const ex = getCurrentExercise();
+
+      if (!isResting) {
+        // Terminó el ejercicio
+        alertExerciseEnd();
+        if (ex.duracionDescanso > 0 && exerciseIndex < 4) {
+          isResting = true;
+          loadExercise();
+        } else {
+          advanceExercise();
+        }
+      } else {
+        // Terminó el descanso
+        alertRestEnd();
+        isResting = false;
+        advanceExercise();
+      }
+    }
+
+    function advanceExercise() {
+      if (exerciseIndex < 4) {
+        exerciseIndex++;
+        isResting = false;
+        loadExercise();
+        renderMiniSequence();
+      } else {
+        // Rutina terminada
+        if (intervalId) clearInterval(intervalId);
+        isRunning = false;
+        document.getElementById('svgPlay').classList.remove('hidden');
+        document.getElementById('svgPause').classList.add('hidden');
+        document.getElementById('txtMainPlay').textContent = "REPETIR RUTINA";
+        document.getElementById('modalDone').classList.remove('hidden');
+        document.getElementById('modalDone').classList.add('flex');
+        alertExerciseEnd();
+      }
+    }
+
+    function skipNext() {
+      if (isResting) {
+        isResting = false;
+        advanceExercise();
+      } else {
+        const ex = getCurrentExercise();
+        if (ex.duracionDescanso > 0 && exerciseIndex < 4) {
+          isResting = true;
+          loadExercise();
+        } else {
+          advanceExercise();
+        }
+      }
+    }
+
+    function closeModalDone() {
+      document.getElementById('modalDone').classList.add('hidden');
+      document.getElementById('modalDone').classList.remove('flex');
+      exerciseIndex = 0;
+      isResting = false;
+      totalSecondsElapsed = 0;
+      loadExercise();
+      renderMiniSequence();
+    }
+
+    function renderMiniSequence() {
+      const container = document.getElementById('miniSequence');
+      const ejercicios = RUTINA_10MIN[selectedPhase].ejercicios;
+
+      container.innerHTML = ejercicios.map((e, i) => {
+        const isCurrent = (i === exerciseIndex);
+        const isDone = (i < exerciseIndex);
+        return `
+          <div class="flex items-center justify-between p-2 rounded-xl transition ${isCurrent ? 'bg-brand-mint/15 text-brand-mint border border-brand-mint/30 font-bold' : isDone ? 'text-slate-500 line-through' : 'text-slate-400'}">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${isCurrent ? 'bg-brand-mint text-brand-dark' : isDone ? 'bg-slate-800 text-slate-500' : 'bg-slate-800 text-slate-400'}">
+                ${isDone ? '✓' : (i + 1)}
+              </span>
+              <span>${e.nombre}</span>
+            </div>
+            <span class="text-[11px] opacity-80">${Math.floor(e.duracionTrabajo / 60)}m ${e.duracionTrabajo % 60}s</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Registro Service Worker PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
